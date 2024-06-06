@@ -1,0 +1,11 @@
+{
+    "targets": {
+        "Virtual Console": {
+            "inputs": [
+                "src/Main.elm"
+            ],
+            "output": "build/main.js"
+        }
+    },
+    "serve": "."
+}
