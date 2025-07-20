@@ -1,0 +1,24 @@
+pub mod ast;
+
+
+pub fn to_camel_case(ident: &str) -> String {
+    ident.chars().fold(("".to_owned(), false), |(camel_case, next_word), c| {
+        let upper_c =c.to_uppercase().next().unwrap().to_string() ;
+        let lower_c =c.to_string() ;
+        let string_char : &str =if next_word {&upper_c} else { &lower_c };
+        match c {
+        '_' => (camel_case, true),
+        '?' => (camel_case + "Hmm", true),
+        _ => (camel_case + string_char, false)
+    }}).0
+}
+
+
+// take the parsed AST and turn it into the core language
+pub fn canonicalize(parse_modules : Vec<crate::parse::ast::Module>) -> Vec<ast::Module> {
+    let mut core_modules = vec![];
+    for parse_module in parse_modules {
+        dbg!(parse_module);
+    }
+    core_modules
+}
