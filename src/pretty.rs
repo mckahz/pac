@@ -1,8 +1,6 @@
 use nom_supreme::error::ErrorTree;
 
-use crate::{
-    parse::ast::{ Expr, Import, Operator, Type, Pattern },
-};
+use crate::parse::ast::{Expr, Import, Operator, Pattern, Type};
 
 pub trait PrettyPrint {
     fn pretty_print(&self) -> String;
@@ -64,8 +62,7 @@ impl PrettyPrint for Type {
                 .join("\n"),
             Type::Bool => "Bool".to_string(),
             Type::External(name) => "extern \"".to_string() + &name.to_string() + "\"",
-            Type::Cons(param, def) => "\n".to_owned()
-                + &def.pretty_print() + ")",
+            Type::Cons(param, def) => "\n".to_owned() + &def.pretty_print() + ")",
         }
     }
 }
@@ -123,70 +120,85 @@ impl PrettyPrint for Expr {
         match self {
             Expr::Identifier(i) => i.to_owned(),
             Expr::BinOp { op, lhs, rhs } => {
-                                "(".to_owned()
-                                    + &lhs.pretty_print()
-                                    + " "
-                                    + &op.pretty_print()
-                                    + " "
-                                    + &rhs.pretty_print()
-                                    + ")"
-                            }
+                "(".to_owned()
+                    + &lhs.pretty_print()
+                    + " "
+                    + &op.pretty_print()
+                    + " "
+                    + &rhs.pretty_print()
+                    + ")"
+            }
             Expr::Nat(n) => n.to_string(),
             Expr::Int(i) => i.to_string(),
             Expr::Float(x) => x.to_string(),
             Expr::String(s) => "\"".to_owned() + s + "\"",
             Expr::Record(fields) => {
-                                "{ ".to_owned()
-                                    + &fields
-                                        .iter()
-                                        .map(|(field, value)| field.to_owned() + " : " + &value.pretty_print())
-                                        .collect::<Vec<String>>()
-                                        .join(", ")
-                                    + " }"
-                            }
+                "{ ".to_owned()
+                    + &fields
+                        .iter()
+                        .map(|(field, value)| field.to_owned() + " : " + &value.pretty_print())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                    + " }"
+            }
             Expr::Access(rec, field) => rec.pretty_print() + "." + &field.pretty_print(),
             Expr::List(xs) => {
-                                "[".to_string()
-                                    + &xs
-                                        .iter()
-                                        .map(|x| x.pretty_print())
-                                        .collect::<Vec<String>>()
-                                        .join(", ")
-                                    + "]"
-                            }
+                "[".to_string()
+                    + &xs
+                        .iter()
+                        .map(|x| x.pretty_print())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                    + "]"
+            }
             Expr::Ap(f, xs) => "(".to_string() + &f.pretty_print() + " " + &xs.pretty_print() + ")",
             Expr::Lambda(arg, body) => {
-                                "(\\".to_owned() + &arg.pretty_print() + " -> " + &body.pretty_print() + ")"
-                            }
+                "(\\".to_owned() + &arg.pretty_print() + " -> " + &body.pretty_print() + ")"
+            }
             Expr::When(expr, branches) => {
-                                "when ".to_string()
-                                    + &expr.pretty_print()
-                                    + " is\n"
-                                    + &indent(
-                                        &("| ".to_string()
-                                            + &branches
-                                                .iter()
-                                                .map(|(pat, body)| {
-                                                    pat.pretty_print() + " -> " + &body.pretty_print()
-                                                })
-                                                .collect::<Vec<String>>()
-                                                .join("\n| ")),
-                                    )
-                            }
+                "when ".to_string()
+                    + &expr.pretty_print()
+                    + " is\n"
+                    + &indent(
+                        &("| ".to_string()
+                            + &branches
+                                .iter()
+                                .map(|(pat, body)| {
+                                    pat.pretty_print() + " -> " + &body.pretty_print()
+                                })
+                                .collect::<Vec<String>>()
+                                .join("\n| ")),
+                    )
+            }
             Expr::Unit => "()".to_string(),
             Expr::If(cond, then_branch, else_branch) => {
-                                "(if ".to_string()
-                                    + &cond.pretty_print()
-                                    + " then "
-                                    + &then_branch.pretty_print()
-                                    + " else "
-                                    + &else_branch.pretty_print()
-                                    + ")"
-                            }
+                "(if ".to_string()
+                    + &cond.pretty_print()
+                    + " then "
+                    + &then_branch.pretty_print()
+                    + " else "
+                    + &else_branch.pretty_print()
+                    + ")"
+            }
             Expr::Bool(bool) => bool.to_string(),
             Expr::External(name) => "@".to_string() + name,
-            Expr::Let(pattern, def, body) => "(let ".to_owned() + &pattern.pretty_print() + " = " + &def.pretty_print() + "; " + &body.pretty_print(),
-            Expr::Bind(pattern, def, body) => "(let ".to_owned() + &pattern.pretty_print() + " <- " + &def.pretty_print() + "; " + &body.pretty_print(),
+            Expr::Let(pattern, def, body) => {
+                "(let ".to_owned()
+                    + &pattern.pretty_print()
+                    + " = "
+                    + &def.pretty_print()
+                    + "; "
+                    + &body.pretty_print()
+            }
+            Expr::Bind(pattern, def, body) => {
+                "(let ".to_owned()
+                    + &pattern.pretty_print()
+                    + " <- "
+                    + &def.pretty_print()
+                    + "; "
+                    + &body.pretty_print()
+            }
+            Expr::Constructor(cons) => cons.to_owned(),
         }
     }
 }
@@ -287,8 +299,8 @@ impl PrettyPrint for ErrorTree<&str> {
                         ErrorKind::Fail => "failure".to_string(),
                     },
                     BaseErrorKind::External(_) => todo!(),
-                }) + ":\n"
-                    + &indent(&location[0..5])
+                }) + " at\n"
+                    + &indent(&location)
             }
             GenericErrorTree::Stack { base, contexts } => {
                 let context = contexts
@@ -316,14 +328,6 @@ impl PrettyPrint for ErrorTree<&str> {
                         })
                         .unwrap()
                         .pretty_print()
-
-                // "any of\n".to_string()
-                //     + &indent(&("|| ".to_string()
-                //         + &sub_trees
-                //             .iter()
-                //             .map(|sub_tree| sub_tree.pretty_print())
-                //             .collect::<Vec<String>>()
-                //             .join("\n|| ")))
             }
         }
     }

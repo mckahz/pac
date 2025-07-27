@@ -1,14 +1,13 @@
+pub mod ast;
 mod expression;
 mod pattern;
-pub mod ast;
 mod statement;
 mod tipe;
 
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use nom::{
     branch::alt,
-    bytes::complete::tag,
     character::complete::{alphanumeric1, digit1, multispace0, satisfy},
     combinator::{eof, fail, not, opt, success},
     multi::{many0, many1, many_m_n, many_till, separated_list0, separated_list1},
@@ -16,24 +15,14 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, terminated, tuple},
     IResult, Parser,
 };
-use nom_supreme::{ParserExt};
+use nom_supreme::{tag::complete::tag, ParserExt};
 
-use ast::{Import, Expr,  Statement, Type, Module};
+use ast::{Expr, Import, Module, Statement, Type};
 
 pub type Result<'a, O> = IResult<&'a str, O, nom_supreme::error::ErrorTree<&'a str>>;
 
 const KEYWORDS: [&str; 11] = [
-    "if",
-    "then",
-    "else",
-    "when",
-    "is",
-    "let",
-    "module",
-    "import",
-    "crash",
-    "dbg",
-    "extern",
+    "if", "then", "else", "when", "is", "let", "module", "import", "crash", "dbg", "extern",
 ];
 
 fn lexeme<'a, F: 'a, O>(inner: F) -> impl FnMut(&'a str) -> Result<O>
@@ -47,7 +36,7 @@ fn keyword<'a>(kw: &'static str) -> impl FnMut(&'a str) -> Result<&'a str> {
     lexeme(tag(kw))
 }
 
-fn symbol<'a>(s: &'a str) -> impl FnMut(&'a str) -> Result<&'a str> {
+fn symbol<'a>(s: &'static str) -> impl FnMut(&'a str) -> Result<&'a str> {
     lexeme(tag(s))
 }
 
@@ -127,7 +116,6 @@ pub fn file(i: &str) -> Result<Module> {
             Statement::Let(binding, expr) => defs.push((binding, expr)),
             Statement::Type(binding, tipe) => typeDefs.push((binding, tipe)),
         }
-
     }
 
     success(Module {

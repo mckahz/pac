@@ -1,18 +1,38 @@
 {
-  description = "A flake for the PAC sdk.";
-
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-20.03";
-
-  outputs = { self, nixpkgs }: {
-    packages.x86_64-linux.default =
-      # Notice the reference to nixpkgs here.
-      with import nixpkgs { system = "x86_64-linux"; };
-      stdenv.mkDerivation {
-        name = "hello";
-        src = self;
-        buildPhase = "gcc -o hello ./hello.c";
-        installPhase = "mkdir -p $out/bin; install -t $out/bin hello";
-      };
-
+  inputs = {
+    naersk.url = "github:nix-community/naersk/master";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    utils.url = "github:numtide/flake-utils";
   };
+
+  outputs =
+    {
+      self,
+      nixpkgs,
+      utils,
+      naersk,
+    }:
+    utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+        naersk-lib = pkgs.callPackage naersk { };
+      in
+      {
+        defaultPackage = naersk-lib.buildPackage ./.;
+        devShell =
+          with pkgs;
+          mkShell {
+            buildInputs = [
+              cargo
+              rustc
+              rustup
+              rustfmt
+              pre-commit
+              rustPackages.clippy
+            ];
+            RUST_SRC_PATH = rustPlatform.rustLibSrc;
+          };
+      }
+    );
 }

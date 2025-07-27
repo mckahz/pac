@@ -1,13 +1,16 @@
 #![allow(warnings)]
 
+mod compile;
 mod core;
 mod parse;
-mod compile;
 mod pretty;
 
-use std::path::{Path, PathBuf};
+use nom_supreme::{error::ErrorTree, final_parser::final_parser};
 use pretty::PrettyPrint;
-use nom_supreme::{final_parser::final_parser, error::ErrorTree};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 fn get_paths(root_dir: &Path) -> Vec<PathBuf> {
     //return vec![root_dir.join(Path::new("List.lang")).to_path_buf()];
@@ -30,7 +33,7 @@ pub fn load(root_dir: &Path) -> Result<Vec<parse::ast::Module>, Box<dyn std::err
     let paths = get_paths(root_dir);
     let mut modules: Vec<parse::ast::Module> = vec![];
     // TODO: remove head operation
-    for path in &paths[..1] {
+    for path in paths {
         let file = std::fs::read_to_string(&path).unwrap();
         let parse_results: std::result::Result<parse::ast::Module, ErrorTree<&str>> =
             final_parser(crate::parse::file)(&file);
@@ -40,18 +43,23 @@ pub fn load(root_dir: &Path) -> Result<Vec<parse::ast::Module>, Box<dyn std::err
             }
             Err(e) => {
                 eprintln!("{}", e.pretty_print());
-                break;
             }
         }
     }
-    Ok( modules )
+    Ok(modules)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     //std::env::set_var("RUST_BACKTRACE", "1");
     let root_dir = Path::new(&args[1]);
+    fs::remove_dir_all("build");
+    fs::create_dir("build");
     let project = core::canonicalize(load(root_dir).unwrap());
+    for module in project {
+        println!("compiling {}.pac", module.name);
+        compile::compile_module(module);
+    }
 
     Ok(())
 }

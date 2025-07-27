@@ -6,11 +6,17 @@ pub struct Module {
     pub name: String,
     pub interface: Vec<String>,
     pub imports: Option<Import>,
-    pub signatures: Vec<(String, Expr)>,
-    pub typeDefs: Vec<(String, Expr)>,
+    pub signatures: Vec<(String, Type)>,
+    pub typeDefs: Vec<(String, Type)>,
     pub defs: Vec<(String, Expr)>,
 }
 
+pub enum Statement {
+    Import(Import),
+    Type(String, Type),
+    Signature(String, Type),
+    Let(String, Expr),
+}
 
 #[derive(Debug, Clone)]
 pub enum Type {
@@ -47,6 +53,7 @@ pub enum Expr {
     If(Box<Expr>, Box<Expr>, Box<Expr>),
     Ap(Box<Expr>, Box<Expr>),
     Identifier(String),
+    Constructor(String),
     Lambda(Pattern, Box<Expr>),
     BinOp {
         op: Operator,

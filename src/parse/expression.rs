@@ -3,16 +3,21 @@ use std::collections::VecDeque;
 use nom::{combinator::success, multi::separated_list0};
 use nom_supreme::ParserExt;
 
-use crate::{
-    parse::ast::{Assoc, Expr, Operator, Pattern},
-};
+use crate::parse::ast::{Assoc, Expr, Operator, Pattern};
 
 use super::*;
 
 fn identifier(i: &str) -> Result<Expr> {
-    alt((value_identifier, type_identifier))
+    value_identifier
         .map(|s| Expr::Identifier(s.to_string()))
         .context("identifier")
+        .parse(i)
+}
+
+fn constructor(i: &str) -> Result<Expr> {
+    type_identifier
+        .map(|s| Expr::Constructor(s.to_string()))
+        .context("constructor")
         .parse(i)
 }
 
@@ -102,6 +107,7 @@ fn non_access_factor(i: &str) -> Result<Expr> {
         lexeme(int).map(Expr::Int),
         lexeme(number::complete::float).map(Expr::Float),
         lexeme(identifier),
+        lexeme(constructor),
     ))
     .context("factor")
     .parse(i)
@@ -204,30 +210,42 @@ fn operator_expression(i: &str) -> Result<Expr> {
 }
 
 fn let_from(i: &str) -> Result<Expr> {
-    let (i, name) = value_identifier.preceded_by(keyword("let")).terminated(symbol("<-")).parse(i)?;
+    let (i, name) = value_identifier
+        .preceded_by(keyword("let"))
+        .terminated(symbol("<-"))
+        .parse(i)?;
     let (i, value) = expression
         .terminated(symbol(";").context("semicolon"))
         .parse(i)?;
     let (i, body) = expression.parse(i)?;
 
-    success(Expr::Bind(Pattern::Identifier(name), Box::new(value), Box::new(body)))(i)
+    success(Expr::Bind(
+        Pattern::Identifier(name),
+        Box::new(value),
+        Box::new(body),
+    ))(i)
 }
 
 fn let_in(i: &str) -> Result<Expr> {
-    let (i, name) = value_identifier.preceded_by(keyword("let")).terminated(symbol("=")).parse(i)?;
+    let (i, name) = value_identifier
+        .preceded_by(keyword("let"))
+        .terminated(symbol("="))
+        .parse(i)?;
     let (i, value) = expression
         .terminated(symbol(";").context("semicolon"))
         .parse(i)?;
     let (i, body) = expression.parse(i)?;
 
-    success(Expr::Let(Pattern::Identifier(name), Box::new(value), Box::new(body)))(i)
+    success(Expr::Let(
+        Pattern::Identifier(name),
+        Box::new(value),
+        Box::new(body),
+    ))(i)
 }
 
 fn lambda(i: &str) -> Result<Expr> {
     let (i, args) = delimited(symbol("\\"), many1(pattern::pattern), symbol("->"))(i)?;
-    let (i, body) = expression
-        .terminated(symbol(";").context("semicolon"))
-        .parse(i)?;
+    let (i, body) = expression.parse(i)?;
 
     let mut args = args.into_iter().rev();
     let final_arg = args.next().unwrap();
@@ -251,7 +269,7 @@ fn if_expr(i: &str) -> Result<Expr> {
     ))(i)
 }
 
-fn branch(i: &str) -> Result<(Pattern, Expr)> {
+fn alternative(i: &str) -> Result<(Pattern, Expr)> {
     use pattern::*;
     let (i, pat) = pattern.terminated(symbol("->")).parse(i)?;
     let (i, body) = expression(i)?;
@@ -261,13 +279,18 @@ fn branch(i: &str) -> Result<(Pattern, Expr)> {
 fn when_expr(i: &str) -> Result<Expr> {
     let (i, val) = delimited(keyword("when"), expression, keyword("is"))(i)?;
     let (i, _) = opt(symbol("|"))(i)?;
-    let (i, branches) = separated_list1(symbol("|"), branch)(i)?;
-    success(Expr::When(Box::new(val), branches))(i)
+    let (i, alternatives) = separated_list1(symbol("|"), alternative)
+        .terminated(symbol(";"))
+        .parse(i)?;
+    success(Expr::When(Box::new(val), alternatives))(i)
 }
 
 fn crash_expr(i: &str) -> Result<Expr> {
     let (i, msg) = preceded(keyword("crash"), string_literal)(i)?;
-    success(Expr::External("crash ".to_owned() + &msg))(i)
+    success(Expr::Ap(
+        Box::new(Expr::External("crash".to_owned())),
+        Box::new(Expr::String(msg)),
+    ))(i)
 }
 
 fn extern_expr(i: &str) -> Result<Expr> {

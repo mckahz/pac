@@ -8,7 +8,7 @@ let even? : Int -> Bool;
 let even? n = n % 2 == 0;
 
 let odd? : Int -> Bool;
-let odd? = not << even?
+let odd? = not << even?;
 
 let to_string : Int -> String;
 let to_string n = n;

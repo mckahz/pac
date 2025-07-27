@@ -2,7 +2,7 @@ use nom_supreme::ParserExt;
 
 use self::expression::expression;
 
-use super::*;
+use super::{ast::Statement, *};
 
 fn import_hierarchy(i: &str) -> Result<String> {
     alt((value_identifier, type_identifier))(i)
@@ -10,7 +10,14 @@ fn import_hierarchy(i: &str) -> Result<String> {
 
 fn import_statement(i: &str) -> Result<Statement> {
     let (i, module) = delimited(keyword("import"), import_hierarchy, symbol(";"))(i)?;
-    Ok((i, Statement::Import(Import { module, alias: None, children: vec![] })))
+    Ok((
+        i,
+        Statement::Import(Import {
+            module,
+            alias: None,
+            children: vec![],
+        }),
+    ))
 }
 
 fn let_type(i: &str) -> Result<Statement> {
@@ -31,7 +38,7 @@ fn let_type(i: &str) -> Result<Statement> {
         )
     };
 
-    success(Statement::Type(name, tipe))(i)
+    Ok((i, Statement::Type(name, tipe)))
 }
 
 fn let_signature(i: &str) -> Result<Statement> {
@@ -40,7 +47,7 @@ fn let_signature(i: &str) -> Result<Statement> {
         .terminated(symbol(";").context("semicolon"))
         .parse(i)?;
 
-    success(Statement::Signature(name, tipe))(i)
+    Ok((i, Statement::Signature(name, tipe)))
 }
 
 fn let_value(i: &str) -> Result<Statement> {
@@ -61,7 +68,7 @@ fn let_value(i: &str) -> Result<Statement> {
             })
     };
 
-    success(Statement::Let(name, rhs))(i)
+    Ok((i, Statement::Let(name, rhs)))
 }
 
 fn let_declaration(i: &str) -> Result<Statement> {

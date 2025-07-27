@@ -1,7 +1,6 @@
 module Task [Task, println];
 
-let Task = extern "Task";
+let Task a = extern "Task";
 
-let println : String -> Task { stdout: Stdout } ();
+let println : String -> Task ();
 let println = extern "println";
-

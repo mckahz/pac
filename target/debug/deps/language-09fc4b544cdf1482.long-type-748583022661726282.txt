@@ -1,0 +1,2 @@
+nom_supreme::error::GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+&str: nom::Parser<&str, _, nom_supreme::error::GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>
