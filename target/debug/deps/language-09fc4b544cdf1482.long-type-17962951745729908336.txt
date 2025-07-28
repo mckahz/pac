@@ -1,0 +1,1 @@
+std::result::Result<(&str, Vec<parse::ast::Pattern>), nom::Err<nom_supreme::error::GenericErrorTree<&str, &str, &str, Box<dyn std::error::Error + Send + Sync>>>>

@@ -105,7 +105,7 @@ pub fn file(i: &str) -> Result<Module> {
         .parse(i)?;
 
     let mut imports = vec![];
-    let mut typeDefs = vec![];
+    let mut type_defs = vec![];
     let mut signatures = vec![];
     let mut defs = vec![];
 
@@ -114,14 +114,14 @@ pub fn file(i: &str) -> Result<Module> {
             Statement::Import(import) => imports.push(import),
             Statement::Signature(binding, tipe) => signatures.push((binding, tipe)),
             Statement::Let(binding, expr) => defs.push((binding, expr)),
-            Statement::Type(binding, tipe) => typeDefs.push((binding, tipe)),
+            Statement::Type(binding, type_def) => type_defs.push((binding, type_def)),
         }
     }
 
     success(Module {
         name: module_name.to_owned(),
-        imports: None,
-        typeDefs,
+        imports,
+        type_defs,
         signatures,
         interface,
         // TODO: properly parse the imports, then the definitions in a module

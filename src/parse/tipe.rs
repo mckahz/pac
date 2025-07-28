@@ -31,39 +31,29 @@ fn factor(i: &str) -> Result<Type> {
         keyword("Nat").map(|_| Type::Nat),
         keyword("Int").map(|_| Type::Int),
         keyword("Float").map(|_| Type::Float),
+        keyword("String").map(|_| Type::String),
         type_identifier.map(Type::Identifier),
         value_identifier.map(Type::Identifier),
     ))(i)
 }
-
-fn term(i: &str) -> Result<Type> {
+fn constructor(i: &str) -> Result<Type> {
+    // TODO: allow for higher kinded types???
+    let (i, name) = type_identifier(i)?;
     let (i, factors) = many1(factor)(i)?;
-    success(Type::Product(factors))(i)
+    success(Type::Cons(name, factors))(i)
 }
 
-fn external(i: &str) -> Result<Type> {
-    preceded(keyword("extern"), expression::string_literal).map(Type::External).parse(i)
+fn term(i: &str) -> Result<Type> {
+    alt((constructor, factor))(i)
 }
 
 fn function(i: &str) -> Result<Type> {
     let (i, terms) = separated_list1(symbol("->"), term).parse(i)?;
     let mut terms = terms.into_iter().rev();
     let last = terms.next().unwrap();
-    success(
-        terms.fold(last, |acc, a| Type::Fn(Box::new(a), Box::new(acc))),
-    )(i)
-}
-
-fn sum(i: &str) -> Result<Type> {
-    let (i, _) = symbol("|")(i)?;
-    let (i, variants) = separated_list0(symbol("|"), term)(i)?;
-    success(Type::Sum(variants))(i)
-}
-
-pub fn internal(i: &str) -> Result<Type> {
-    alt((sum, function))(i)
+    success(terms.fold(last, |acc, a| Type::Fn(Box::new(a), Box::new(acc))))(i)
 }
 
 pub fn tipe(i: &str) -> Result<Type> {
-    alt((external, internal))(i)
+    alt((function, term))(i)
 }

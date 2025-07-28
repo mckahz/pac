@@ -87,18 +87,9 @@ fn list(i: &str) -> Result<Expr> {
 }
 
 fn factor(i: &str) -> Result<Expr> {
-    let (i, mut factors): (&str, VecDeque<Expr>) = separated_list1(symbol("."), non_access_factor)
-        .map(|factors| factors.into_iter().collect())
-        .parse(i)?;
-    let mut fac = factors.pop_front().unwrap();
-    while let Some(f) = factors.pop_front() {
-        fac = Expr::Access(Box::new(fac), Box::new(f));
-    }
-    success(fac)(i)
-}
-
-fn non_access_factor(i: &str) -> Result<Expr> {
     alt((
+        tuple((type_identifier.terminated(symbol(".")), value_identifier))
+            .map(|(module, member)| Expr::Access(module, member)),
         parens(expression),
         record_literal,
         list,
@@ -298,6 +289,19 @@ fn extern_expr(i: &str) -> Result<Expr> {
     success(Expr::External(name))(i)
 }
 
+fn tuple_expression(i: &str) -> Result<Expr> {
+    let (i, first) = expression
+        .preceded_by(symbol("("))
+        .terminated(symbol(","))
+        .parse(i)?;
+    let (i, mut rest) = separated_list1(symbol(","), expression)
+        .terminated(symbol(")"))
+        .parse(i)?;
+    let mut exprs = vec![first];
+    exprs.append(&mut rest);
+    Ok((i, Expr::Tuple(exprs)))
+}
+
 pub fn expression(i: &str) -> Result<Expr> {
     alt((
         if_expr,
@@ -309,6 +313,7 @@ pub fn expression(i: &str) -> Result<Expr> {
         let_from,
         let_in,
         term,
+        tuple_expression,
         parens(expression),
     ))
     .context("expression")

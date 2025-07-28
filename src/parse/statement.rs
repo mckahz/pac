@@ -1,5 +1,7 @@
 use nom_supreme::ParserExt;
 
+use crate::parse::ast::{Constructor, TypeDef};
+
 use self::expression::expression;
 
 use super::{ast::Statement, *};
@@ -10,42 +12,56 @@ fn import_hierarchy(i: &str) -> Result<String> {
 
 fn import_statement(i: &str) -> Result<Statement> {
     let (i, module) = delimited(keyword("import"), import_hierarchy, symbol(";"))(i)?;
+    Ok((i, Statement::Import(Import { module })))
+}
+
+fn constructor(i: &str) -> Result<(String, Vec<Type>)> {
+    let (i, name) = type_identifier(i)?;
+    let (i, args) = many0(tipe::tipe).parse(i)?;
+
+    Ok((i, (name, args)))
+}
+
+fn internal_type_def(i: &str) -> Result<Statement> {
+    let (i, name) = type_identifier(i)?;
+    let (i, args) = many0(value_identifier).terminated(symbol("=")).parse(i)?;
+    let (i, constructors) = separated_list1(symbol("|"), constructor)
+        .preceded_by(opt(symbol("|")))
+        .map(|constructors| {
+            constructors
+                .into_iter()
+                .map(|(name, args)| Constructor { name, args })
+                .collect()
+        })
+        .terminated(symbol(";"))
+        .parse(i)?;
+
     Ok((
         i,
-        Statement::Import(Import {
-            module,
-            alias: None,
-            children: vec![],
-        }),
+        Statement::Type(name, TypeDef::Internal { args, constructors }),
     ))
 }
 
-fn let_type(i: &str) -> Result<Statement> {
+fn external_type_def(i: &str) -> Result<Statement> {
     let (i, name) = type_identifier(i)?;
-    let (i, params) = many0(value_identifier).terminated(symbol("=")).parse(i)?;
-    let (i, body) = tipe::tipe
-        .terminated(symbol(";").context("semicolon"))
+    let (i, _args) = many0(value_identifier).terminated(symbol("=")).parse(i)?;
+
+    let (i, type_def) = expression::string_literal
+        .preceded_by(keyword("extern"))
+        .terminated(symbol(";"))
+        .map(|s| TypeDef::External(s))
         .parse(i)?;
 
-    let tipe = if params.is_empty() {
-        body
-    } else {
-        let mut params = params.into_iter();
-        let last = params.next().unwrap();
-        params.fold(
-            Type::Cons(Box::new(Type::Identifier(last)), Box::new(body)),
-            |f, param| Type::Cons(Box::new(Type::Identifier(param)), Box::new(f)),
-        )
-    };
+    Ok((i, Statement::Type(name, type_def)))
+}
 
-    Ok((i, Statement::Type(name, tipe)))
+fn let_type(i: &str) -> Result<Statement> {
+    alt((internal_type_def, external_type_def))(i)
 }
 
 fn let_signature(i: &str) -> Result<Statement> {
     let (i, name) = value_identifier.terminated(symbol(":")).parse(i)?;
-    let (i, tipe) = tipe::tipe
-        .terminated(symbol(";").context("semicolon"))
-        .parse(i)?;
+    let (i, tipe) = tipe::tipe.terminated(symbol(";")).parse(i)?;
 
     Ok((i, Statement::Signature(name, tipe)))
 }

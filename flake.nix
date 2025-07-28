@@ -30,6 +30,7 @@
               rustfmt
               pre-commit
               rustPackages.clippy
+              static-web-server
             ];
             RUST_SRC_PATH = rustPlatform.rustLibSrc;
           };

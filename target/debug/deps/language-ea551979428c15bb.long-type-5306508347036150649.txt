@@ -1,0 +1,2 @@
+std::result::Result<(&str, parse::ast::Type), nom::Err<nom_supreme::error::GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>
+impl FnMut(&str) -> std::result::Result<(&str, parse::ast::Type), nom::Err<nom_supreme::error::GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>

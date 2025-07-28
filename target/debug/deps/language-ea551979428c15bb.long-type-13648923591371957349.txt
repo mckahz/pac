@@ -1,0 +1,1 @@
+nom::Map<for<'a> fn(&'a str) -> std::result::Result<(&'a str, String), nom::Err<nom_supreme::error::GenericErrorTree<&'a str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {parse::type_identifier}, fn(String) -> parse::ast::Type {parse::ast::Type::Identifier}, String>

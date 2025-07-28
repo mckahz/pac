@@ -2,13 +2,13 @@
 pub struct Module {
     pub name: String,
     pub imports: Vec<Import>,
+    pub interface: Vec<String>,
     pub defs: Vec<(String, Expr)>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Import {
-    name: String,
-    path: String,
+    pub name: String,
 }
 
 #[derive(Debug, Clone)]
@@ -35,6 +35,7 @@ pub enum Operator {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    Extern(String),
     Ap {
         function: Box<Expr>,
         arg: Box<Expr>,
@@ -56,6 +57,11 @@ pub enum Expr {
         arg: String,
         body: Box<Expr>,
     },
+    If {
+        cond: Box<Expr>,
+        true_branch: Box<Expr>,
+        false_branch: Box<Expr>,
+    },
     When {
         expr: Box<Expr>,
         alternatives: Vec<Alternative>,
@@ -64,7 +70,10 @@ pub enum Expr {
     Num(f64),
     String(String),
     List(Vec<Expr>),
-    Extern(String),
+    ModuleAccess {
+        module: String,
+        member: String,
+    },
     Constructor {
         tag: u8,
         arity: u8,

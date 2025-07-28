@@ -4,6 +4,7 @@ mod compile;
 mod core;
 mod parse;
 mod pretty;
+mod util;
 
 use nom_supreme::{error::ErrorTree, final_parser::final_parser};
 use pretty::PrettyPrint;
@@ -42,6 +43,10 @@ pub fn load(root_dir: &Path) -> Result<Vec<parse::ast::Module>, Box<dyn std::err
                 modules.push(module);
             }
             Err(e) => {
+                eprintln!(
+                    "I encountered an error when parsing the {:?}.pac module",
+                    path.file_name().unwrap()
+                );
                 eprintln!("{}", e.pretty_print());
             }
         }
@@ -49,17 +54,20 @@ pub fn load(root_dir: &Path) -> Result<Vec<parse::ast::Module>, Box<dyn std::err
     Ok(modules)
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
     let args: Vec<String> = std::env::args().collect();
     //std::env::set_var("RUST_BACKTRACE", "1");
     let root_dir = Path::new(&args[1]);
-    fs::remove_dir_all("build");
-    fs::create_dir("build");
-    let project = core::canonicalize(load(root_dir).unwrap());
-    for module in project {
-        println!("compiling {}.pac", module.name);
-        compile::compile_module(module);
-    }
+    let all_modules = {
+        let mut user_modules = load(root_dir).unwrap();
+        let mut builtin_modules = load(Path::new("src/basics")).unwrap();
 
-    Ok(())
+        let mut all = vec![];
+        all.append(&mut user_modules);
+        all.append(&mut builtin_modules);
+        all
+    };
+    let modules = core::canonicalize::canonicalize(all_modules);
+
+    compile::compile(modules);
 }

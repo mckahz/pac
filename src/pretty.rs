@@ -1,17 +1,10 @@
 use nom_supreme::error::ErrorTree;
 
 use crate::parse::ast::{Expr, Import, Operator, Pattern, Type};
+use crate::util::indent;
 
 pub trait PrettyPrint {
     fn pretty_print(&self) -> String;
-}
-
-fn indent(input: &str) -> String {
-    input
-        .lines()
-        .map(|line| "    ".to_owned() + line)
-        .collect::<Vec<String>>()
-        .join("\n")
 }
 
 impl PrettyPrint for Import {
@@ -50,19 +43,16 @@ impl PrettyPrint for Type {
                         .join(", ")
                     + ")"
             }
-            Type::Product(args) => args
-                .iter()
-                .map(|arg| arg.pretty_print())
-                .collect::<Vec<String>>()
-                .join(" "),
-            Type::Sum(variants) => variants
-                .iter()
-                .map(|variant| "| ".to_string() + &variant.pretty_print())
-                .collect::<Vec<String>>()
-                .join("\n"),
             Type::Bool => "Bool".to_string(),
             Type::External(name) => "extern \"".to_string() + &name.to_string() + "\"",
-            Type::Cons(param, def) => "\n".to_owned() + &def.pretty_print() + ")",
+            Type::Cons(name, args) => {
+                name.to_owned()
+                    + &args
+                        .iter()
+                        .map(|arg| arg.pretty_print())
+                        .collect::<Vec<String>>()
+                        .join(" ")
+            }
         }
     }
 }
@@ -102,14 +92,22 @@ impl PrettyPrint for Pattern {
             Pattern::Wildcard => "_".to_string(),
             Pattern::Identifier(ident) => ident.to_string(),
             Pattern::EmptyList => "[]".to_string(),
-            Pattern::Cons(lhs, rhs) => lhs.pretty_print() + " :: " + &rhs.pretty_print(),
-            Pattern::Product(tag, args) => {
-                tag.to_string()
-                    + &args
+            Pattern::Constructor(tag, patterns) => {
+                tag.to_owned()
+                    + &patterns
                         .iter()
-                        .map(|arg| arg.pretty_print())
+                        .map(|pattern| pattern.pretty_print())
                         .collect::<Vec<String>>()
                         .join(" ")
+            }
+            Pattern::Tuple(patterns) => {
+                "(".to_owned()
+                    + &patterns
+                        .iter()
+                        .map(|pattern| pattern.pretty_print())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                    + ")"
             }
         }
     }
@@ -141,7 +139,7 @@ impl PrettyPrint for Expr {
                         .join(", ")
                     + " }"
             }
-            Expr::Access(rec, field) => rec.pretty_print() + "." + &field.pretty_print(),
+            Expr::Access(module, member) => module.to_owned() + "." + &member,
             Expr::List(xs) => {
                 "[".to_string()
                     + &xs
@@ -199,6 +197,15 @@ impl PrettyPrint for Expr {
                     + &body.pretty_print()
             }
             Expr::Constructor(cons) => cons.to_owned(),
+            Expr::Tuple(exprs) => {
+                "(".to_owned()
+                    + &exprs
+                        .iter()
+                        .map(|expr| expr.pretty_print())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                    + ")"
+            }
         }
     }
 }

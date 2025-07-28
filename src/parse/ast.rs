@@ -1,21 +1,35 @@
-use crate::pretty::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Module {
     pub name: String,
     pub interface: Vec<String>,
-    pub imports: Option<Import>,
+    pub imports: Vec<Import>,
     pub signatures: Vec<(String, Type)>,
-    pub typeDefs: Vec<(String, Type)>,
+    pub type_defs: Vec<(String, TypeDef)>,
     pub defs: Vec<(String, Expr)>,
 }
 
 pub enum Statement {
     Import(Import),
-    Type(String, Type),
+    Type(String, TypeDef),
     Signature(String, Type),
     Let(String, Expr),
+}
+
+#[derive(Debug, Clone)]
+pub enum TypeDef {
+    Internal {
+        args: Vec<String>,
+        constructors: Vec<Constructor>,
+    },
+    External(String),
+}
+
+#[derive(Debug, Clone)]
+pub struct Constructor {
+    pub name: String,
+    pub args: Vec<Type>,
 }
 
 #[derive(Debug, Clone)]
@@ -27,13 +41,11 @@ pub enum Type {
     Nat,
     Float,
     String,
-    Cons(Box<Type>, Box<Type>),
+    Cons(String, Vec<Type>),
     Identifier(String),
     Fn(Box<Type>, Box<Type>),
     Record(HashMap<String, Type>),
     Tuple(Vec<Type>),
-    Product(Vec<Type>),
-    Sum(Vec<Type>),
 }
 
 #[derive(Debug, Clone)]
@@ -41,8 +53,8 @@ pub enum Pattern {
     Wildcard,
     Identifier(String),
     EmptyList,
-    Cons(Box<Pattern>, Box<Pattern>),
-    Product(String, Vec<Pattern>),
+    Constructor(String, Vec<Pattern>),
+    Tuple(Vec<Pattern>),
 }
 
 #[derive(Debug, Clone)]
@@ -68,15 +80,14 @@ pub enum Expr {
     Float(f32),
     String(String),
     Record(HashMap<String, Expr>),
-    Access(Box<Expr>, Box<Expr>),
+    Access(String, String),
     List(Vec<Expr>),
+    Tuple(Vec<Expr>),
 }
 
 #[derive(Debug, Clone)]
 pub struct Import {
     pub module: String,
-    pub alias: Option<String>,
-    pub children: Vec<Import>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

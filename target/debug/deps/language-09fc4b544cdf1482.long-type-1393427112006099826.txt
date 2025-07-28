@@ -1,0 +1,1 @@
+nom::Map<impl FnMut(&str) -> std::result::Result<(&str, Vec<parse::ast::Pattern>), nom::Err<nom_supreme::error::GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>, {closure@src/parse/pattern.rs:39:62: 39:73}, Vec<parse::ast::Pattern>>
