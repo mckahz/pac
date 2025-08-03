@@ -1,4 +1,4 @@
-use crate::core::ast::*;
+use crate::ast::core::*;
 use crate::util::indent;
 
 use std::fs::File;

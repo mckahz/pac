@@ -1,0 +1,1 @@
+std::result::Result<(&str, Option<&str>), nom::Err<GenericErrorTree<&str, &str, &str, Box<dyn std::error::Error + Send + Sync>>>>

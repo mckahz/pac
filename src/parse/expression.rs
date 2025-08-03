@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use nom::{combinator::success, multi::separated_list0};
 use nom_supreme::ParserExt;
 
-use crate::parse::ast::{Assoc, Expr, Operator, Pattern};
+use crate::ast::source::{Assoc, Expr, Operator, Pattern};
 
 use super::*;
 

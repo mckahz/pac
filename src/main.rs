@@ -1,13 +1,15 @@
 #![allow(warnings)]
 
+mod ast;
+mod canonicalize;
 mod compile;
-mod core;
 mod parse;
-mod pretty;
+mod report;
 mod util;
 
-use nom_supreme::{error::ErrorTree, final_parser::final_parser};
-use pretty::PrettyPrint;
+use canonicalize::canonicalize;
+use nom_supreme::{error::GenericErrorTree, final_parser::final_parser};
+use report::{pretty::PrettyPrint, Report};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -30,28 +32,32 @@ fn get_paths(root_dir: &Path) -> Vec<PathBuf> {
     return paths;
 }
 
-pub fn load(root_dir: &Path) -> Result<Vec<parse::ast::Module>, Box<dyn std::error::Error>> {
+pub fn load(root_dir: &Path) -> Result<Vec<ast::source::Module>, Vec<()>> {
     let paths = get_paths(root_dir);
-    let mut modules: Vec<parse::ast::Module> = vec![];
-    // TODO: remove head operation
+    let mut modules = vec![];
+    let mut error_reports = vec![];
     for path in paths {
         let file = std::fs::read_to_string(&path).unwrap();
-        let parse_results: std::result::Result<parse::ast::Module, ErrorTree<&str>> =
+        let parse_results: Result<ast::source::Module, report::error::syntax::Error> =
             final_parser(crate::parse::file)(&file);
         match parse_results {
-            Ok(module) => {
-                modules.push(module);
-            }
-            Err(e) => {
+            Ok(module) => modules.push(module),
+            Err(err) => {
                 eprintln!(
-                    "I encountered an error when parsing the {:?}.pac module",
-                    path.file_name().unwrap()
+                    "error parsing {}:\n{}",
+                    &path.as_os_str().to_str().unwrap(),
+                    err
                 );
-                eprintln!("{}", e.pretty_print());
+                error_reports.push(());
             }
         }
     }
-    Ok(modules)
+
+    if error_reports.is_empty() {
+        Ok(modules)
+    } else {
+        Err(todo!())
+    }
 }
 
 fn main() {
@@ -67,7 +73,7 @@ fn main() {
         all.append(&mut builtin_modules);
         all
     };
-    let modules = core::canonicalize::canonicalize(all_modules);
+    let modules = canonicalize(all_modules);
 
     compile::compile(modules);
 }

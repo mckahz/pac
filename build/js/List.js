@@ -63,5 +63,7 @@ export const repeat = (n) => (x) => map((__wildcard) => x)(range(0)(n));
 
 export const range = (lo) => (hi) => rangeHelp((() => { return { tag: 0, arity: 0, args: [] }; })())(lo)(hi);
 
+const range2 = (lo) => (hi) => ((lo < hi) ? ((__arg0) => (__arg1) =>  { return { tag: 1, arity: 2, args: [__arg0, __arg1] }; })(lo)(range2((lo + 1))(hi)) : (() => { return { tag: 0, arity: 0, args: [] }; })());
+
 const rangeHelp = (acc) => (lo) => (hi) => ((lo > hi) ? acc : rangeHelp(((__arg0) => (__arg1) =>  { return { tag: 1, arity: 2, args: [__arg0, __arg1] }; })(hi)(acc))(lo)((hi - 1)));
 

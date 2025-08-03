@@ -1,4 +1,4 @@
-use crate::parse::ast::Pattern;
+use crate::ast::source::Pattern;
 
 use super::*;
 

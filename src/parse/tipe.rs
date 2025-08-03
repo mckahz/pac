@@ -22,28 +22,28 @@ fn tuple_type(i: &str) -> Result<Type> {
     success(Type::Tuple(types))(i)
 }
 
-fn factor(i: &str) -> Result<Type> {
+pub fn factor(i: &str) -> Result<Type> {
     alt((
-        parens(tipe),
+        type_identifier.map(Type::Identifier),
+        value_identifier.map(Type::Identifier),
         tuple_type,
         record_type,
         unit_type,
-        keyword("Nat").map(|_| Type::Nat),
-        keyword("Int").map(|_| Type::Int),
-        keyword("Float").map(|_| Type::Float),
-        keyword("String").map(|_| Type::String),
-        type_identifier.map(Type::Identifier),
-        value_identifier.map(Type::Identifier),
+        parens(tipe),
     ))(i)
 }
+
 fn constructor(i: &str) -> Result<Type> {
-    // TODO: allow for higher kinded types???
-    let (i, name) = type_identifier(i)?;
-    let (i, factors) = many1(factor)(i)?;
-    success(Type::Cons(name, factors))(i)
+    let (i, name) = alt((type_identifier, value_identifier))(i)?;
+    let (i, factors) = many0(factor)(i)?;
+    if factors.is_empty() {
+        success(Type::Identifier(name))(i)
+    } else {
+        success(Type::Cons(name, factors))(i)
+    }
 }
 
-fn term(i: &str) -> Result<Type> {
+pub fn term(i: &str) -> Result<Type> {
     alt((constructor, factor))(i)
 }
 

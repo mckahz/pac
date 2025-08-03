@@ -1,4 +1,3 @@
-pub mod ast;
 mod expression;
 mod pattern;
 mod statement;
@@ -15,11 +14,14 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, terminated, tuple},
     IResult, Parser,
 };
+use nom_locate::LocatedSpan;
 use nom_supreme::{tag::complete::tag, ParserExt};
 
-use ast::{Expr, Import, Module, Statement, Type};
+use crate::ast::source::{Expr, Import, Module, Statement, Type};
 
 pub type Result<'a, O> = IResult<&'a str, O, nom_supreme::error::ErrorTree<&'a str>>;
+
+type Input<'a> = LocatedSpan<&'a str>;
 
 const KEYWORDS: [&str; 11] = [
     "if", "then", "else", "when", "is", "let", "module", "import", "crash", "dbg", "extern",
@@ -45,6 +47,10 @@ fn parens<'a, O>(p: impl FnMut(&'a str) -> Result<O>) -> impl FnMut(&'a str) -> 
 }
 
 fn value_identifier(i: &str) -> Result<String> {
+    lexeme(_value_identifier)(i)
+}
+
+fn _value_identifier(i: &str) -> Result<String> {
     let chars = |i| {
         let (i, first) = satisfy(|c| (c.is_alphabetic() && c.is_lowercase()) || c == '_')(i)?;
         let (i, mut rest) = many0(satisfy(|c| {
@@ -73,6 +79,10 @@ fn value_identifier(i: &str) -> Result<String> {
 }
 
 fn type_identifier(i: &str) -> Result<String> {
+    lexeme(_type_identifier)(i)
+}
+
+fn _type_identifier(i: &str) -> Result<String> {
     let (i, first) = satisfy(|c| (c.is_alphabetic() && c.is_uppercase()))(i)?;
     let (i, mut rest) = many0(satisfy(|c| c.is_alphabetic() || c.is_numeric()))(i)?;
     let (i, mut end) = many0(satisfy(|c| c == '?'))(i)?;
@@ -112,9 +122,9 @@ pub fn file(i: &str) -> Result<Module> {
     for statement in statements {
         match statement {
             Statement::Import(import) => imports.push(import),
-            Statement::Signature(binding, tipe) => signatures.push((binding, tipe)),
-            Statement::Let(binding, expr) => defs.push((binding, expr)),
-            Statement::Type(binding, type_def) => type_defs.push((binding, type_def)),
+            Statement::LetSignature(binding, tipe) => signatures.push((binding, tipe)),
+            Statement::LetValue(binding, expr) => defs.push((binding, expr)),
+            Statement::LetType(binding, type_def) => type_defs.push((binding, type_def)),
         }
     }
 

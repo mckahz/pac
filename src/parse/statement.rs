@@ -1,10 +1,5 @@
-use nom_supreme::ParserExt;
-
-use crate::parse::ast::{Constructor, TypeDef};
-
-use self::expression::expression;
-
-use super::{ast::Statement, *};
+use super::{expression::expression, *};
+use crate::ast::source::{Constructor, Statement, TypeDef};
 
 fn import_hierarchy(i: &str) -> Result<String> {
     alt((value_identifier, type_identifier))(i)
@@ -17,7 +12,7 @@ fn import_statement(i: &str) -> Result<Statement> {
 
 fn constructor(i: &str) -> Result<(String, Vec<Type>)> {
     let (i, name) = type_identifier(i)?;
-    let (i, args) = many0(tipe::tipe).parse(i)?;
+    let (i, args) = many0(tipe::factor).parse(i)?;
 
     Ok((i, (name, args)))
 }
@@ -25,8 +20,8 @@ fn constructor(i: &str) -> Result<(String, Vec<Type>)> {
 fn internal_type_def(i: &str) -> Result<Statement> {
     let (i, name) = type_identifier(i)?;
     let (i, args) = many0(value_identifier).terminated(symbol("=")).parse(i)?;
+    let (i, bar) = opt(symbol("|"))(i)?;
     let (i, constructors) = separated_list1(symbol("|"), constructor)
-        .preceded_by(opt(symbol("|")))
         .map(|constructors| {
             constructors
                 .into_iter()
@@ -38,7 +33,7 @@ fn internal_type_def(i: &str) -> Result<Statement> {
 
     Ok((
         i,
-        Statement::Type(name, TypeDef::Internal { args, constructors }),
+        Statement::LetType(name, TypeDef::Internal { args, constructors }),
     ))
 }
 
@@ -52,7 +47,7 @@ fn external_type_def(i: &str) -> Result<Statement> {
         .map(|s| TypeDef::External(s))
         .parse(i)?;
 
-    Ok((i, Statement::Type(name, type_def)))
+    Ok((i, Statement::LetType(name, type_def)))
 }
 
 fn let_type(i: &str) -> Result<Statement> {
@@ -63,7 +58,7 @@ fn let_signature(i: &str) -> Result<Statement> {
     let (i, name) = value_identifier.terminated(symbol(":")).parse(i)?;
     let (i, tipe) = tipe::tipe.terminated(symbol(";")).parse(i)?;
 
-    Ok((i, Statement::Signature(name, tipe)))
+    Ok((i, Statement::LetSignature(name, tipe)))
 }
 
 fn let_value(i: &str) -> Result<Statement> {
@@ -84,7 +79,7 @@ fn let_value(i: &str) -> Result<Statement> {
             })
     };
 
-    Ok((i, Statement::Let(name, rhs)))
+    Ok((i, Statement::LetValue(name, rhs)))
 }
 
 fn let_declaration(i: &str) -> Result<Statement> {
@@ -92,8 +87,8 @@ fn let_declaration(i: &str) -> Result<Statement> {
         keyword("let"),
         alt((
             let_value.context("let value"),
-            let_signature.context("let signature"),
-            let_type.context("let type"),
+            let_signature.context("type signature"),
+            let_type.context("type definition"),
         )),
     )
     .parse(i)

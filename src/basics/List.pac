@@ -84,6 +84,13 @@ let repeat n x = range 0 n |> map (\_ -> x);
 let range : Int -> Int -> List Int;
 let range lo hi = range_help [] lo hi;
 
+let range2 : Int -> Int -> List Int;
+let range2 lo hi =
+    if lo < hi then
+        lo :: range2 (lo + 1) hi
+    else
+        [];
+
 let range_help : List Int -> Int -> Int -> List Int;
 let range_help acc lo hi =
     if lo > hi then
