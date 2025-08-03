@@ -1,0 +1,1 @@
+impl nom::Parser<LocatedSpan<&'a str>, Output = O, Error = nom::error::Error<LocatedSpan<&'a str>>>

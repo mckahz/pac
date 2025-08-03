@@ -1,0 +1,2 @@
+Choice<(impl (Fn(_) -> std::result::Result<(_, _), nom::internal::Err<_>>) + Clone, impl (Fn(_) -> std::result::Result<(_, _), nom::internal::Err<_>>) + Clone)>
+Choice<(impl (Fn(_) -> std::result::Result<(_, _), nom::internal::Err<_>>) + Clone, impl (Fn(_) -> std::result::Result<(_, _), nom::internal::Err<_>>) + Clone)>: nom::Parser<_>

@@ -1,0 +1,2 @@
+impl (Fn(LocatedSpan<&str>) -> Result<(LocatedSpan<&str>, LocatedSpan<&str>), Err<_>>) + Clone
+impl (Fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::internal::Err<_>>) + Clone

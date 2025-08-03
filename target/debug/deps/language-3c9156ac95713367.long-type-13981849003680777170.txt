@@ -1,0 +1,3 @@
+GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>: ParseError<LocatedSpan<&str>>
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<source::Expr_>), nom::Err<GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {parse::expression::factor}

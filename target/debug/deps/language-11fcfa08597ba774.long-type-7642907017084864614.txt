@@ -1,0 +1,5 @@
+GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>: nom::error::ParseError<LocatedSpan<&'a str>>
+fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, LocatedSpan<&'a str>), nom::Err<GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {nom::character::complete::multispace0::<LocatedSpan<&'a str>, GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>}
+GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>: nom::error::ParseError<LocatedSpan<&str>>
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, ()), nom::Err<GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>

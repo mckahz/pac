@@ -1,0 +1,1 @@
+GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>

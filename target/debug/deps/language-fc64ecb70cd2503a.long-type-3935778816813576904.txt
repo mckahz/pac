@@ -1,0 +1,1 @@
+impl FnMut(&'a str) -> std::result::Result<(&'a str, O), nom::Err<GenericErrorTree<&'a str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>

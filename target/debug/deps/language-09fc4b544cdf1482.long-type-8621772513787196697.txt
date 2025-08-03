@@ -1,0 +1,1 @@
+for<'a> fn(&'a str) -> std::result::Result<(ast::Span<'a>, String), nom::Err<GenericErrorTree<ast::Span<'a>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {import_hierarchy}

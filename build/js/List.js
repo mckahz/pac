@@ -27,11 +27,11 @@ export const rest = (xs) => (() => {
     return __expr.args ? __functions[__expr.tag](... __expr.args) : __expr ? __functions[1]() : __functions[0]();
 })();
 
-const emptyHmm = (xs) => (() => {
+const empty__hmmm = (xs) => (() => {
     const __expr = xs;
     const __functions = [
         () => (() => { return { tag: 0, arity: 0, args: [] }; })(),
-        (_) => (() => { return { tag: 1, arity: 0, args: [] }; })()
+        (__wildcard) => (() => { return { tag: 1, arity: 0, args: [] }; })()
     ];
     return __expr.args ? __functions[__expr.tag](... __expr.args) : __expr ? __functions[1]() : __functions[0]();
 })();
@@ -53,7 +53,7 @@ export const map = (f) => walkBackwards((() => { return { tag: 0, arity: 0, args
 
 export const keepIf = (p) => walkBackwards((() => { return { tag: 0, arity: 0, args: [] }; })())((x) => (acc) => (p(x) ? ((__arg0) => (__arg1) =>  { return { tag: 1, arity: 2, args: [__arg0, __arg1] }; })(x)(acc) : acc));
 
-export const dropIf = (p) => keepIf((x) => not(p(x)));
+export const dropIf = (p) => keepIf((__arg) => not(p(Arg)));
 
 export const sum = walk(0)((a) => (b) => (a + b));
 

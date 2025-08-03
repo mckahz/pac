@@ -1,0 +1,1 @@
+nom_supreme::parser_ext::Context<fn(ast::Span<'_>) -> std::result::Result<(ast::Span<'_>, _), nom::Err<_>> {fail::<ast::Span<'_>, _, _>}, &str>

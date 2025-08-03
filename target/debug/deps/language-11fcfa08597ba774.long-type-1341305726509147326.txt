@@ -1,0 +1,1 @@
+for<'a> fn(&'a str) -> std::result::Result<({type error}, Statement<'a>), nom::Err<GenericErrorTree<{type error}, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {import_statement}

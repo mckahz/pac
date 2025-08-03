@@ -1,0 +1,2 @@
+for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, source::Type), nom::Err<nom::error::Error<LocatedSpan<&'a str>>>> {parse::tipe::tipe}
+(for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, String), nom::Err<nom::error::Error<LocatedSpan<&'a str>>>> {parse::value_identifier}, impl nom::Parser<LocatedSpan<&str>, Output = (), Error = nom::error::Error<LocatedSpan<&str>>>, for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, source::Type), nom::Err<nom::error::Error<LocatedSpan<&'a str>>>> {parse::tipe::tipe})

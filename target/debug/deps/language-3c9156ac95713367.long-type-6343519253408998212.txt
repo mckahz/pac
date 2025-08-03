@@ -1,0 +1,1 @@
+fn({type error}) -> std::result::Result<({type error}, {type error}), nom::Err<GenericErrorTree<{type error}, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {parse::expression::term}

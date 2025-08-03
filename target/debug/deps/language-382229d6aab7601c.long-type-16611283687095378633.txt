@@ -1,0 +1,3 @@
+nom_supreme::parser_ext::Context<impl FnMut(ast::Span<'_>) -> std::result::Result<(ast::Span<'_>, ast::Span<'_>), nom::Err<GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>, &str>
+GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+nom_supreme::parser_ext::Context<impl FnMut(ast::Span<'_>) -> std::result::Result<(ast::Span<'_>, ast::Span<'_>), nom::Err<GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>, &str>: nom::Parser<ast::Span<'_>, _, GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>

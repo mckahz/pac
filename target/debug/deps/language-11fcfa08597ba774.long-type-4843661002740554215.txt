@@ -1,0 +1,1 @@
+impl nom::Parser<LocatedSpan<&'a str>, Output = O, Error = GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>

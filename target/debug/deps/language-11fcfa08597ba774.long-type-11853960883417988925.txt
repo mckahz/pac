@@ -1,0 +1,4 @@
+GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>: ParseError<LocatedSpan<&str>>
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, ()), nom::Err<GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>
+for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, (String, Vec<source::Type>)), nom::Err<GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {statement::constructor}

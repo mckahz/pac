@@ -1,26 +1,27 @@
+use super::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Module {
-    pub name: String,
-    pub interface: Vec<String>,
+    pub name: Name,
+    pub interface: Vec<Name>,
     pub imports: Vec<Import>,
-    pub signatures: Vec<(String, Type)>,
-    pub type_defs: Vec<(String, TypeDef)>,
-    pub defs: Vec<(String, Expr)>,
+    pub signatures: Vec<(Name, Type)>,
+    pub type_defs: Vec<(Name, TypeDef)>,
+    pub defs: Vec<(Name, Expr)>,
 }
 
 pub enum Statement {
     Import(Import),
-    LetType(String, TypeDef),
-    LetSignature(String, Type),
-    LetValue(String, Expr),
+    LetType(Name, TypeDef),
+    LetSignature(Name, Type),
+    LetValue(Name, Expr),
 }
 
 #[derive(Debug, Clone)]
 pub enum TypeDef {
     Internal {
-        args: Vec<String>,
+        args: Vec<Name>,
         constructors: Vec<Constructor>,
     },
     External(String),
@@ -28,39 +29,45 @@ pub enum TypeDef {
 
 #[derive(Debug, Clone)]
 pub struct Constructor {
-    pub name: String,
+    pub name: Name,
     pub args: Vec<Type>,
 }
 
+pub type Type = Located<Type_>;
+
 #[derive(Debug, Clone)]
-pub enum Type {
+pub enum Type_ {
     External(String),
     Unit,
-    Cons(String, Vec<Type>),
-    Identifier(String),
+    Cons(Name, Vec<Type>),
+    Identifier(Name),
     Fn(Box<Type>, Box<Type>),
-    Record(HashMap<String, Type>),
+    Record(HashMap<Name, Type>),
     Tuple(Vec<Type>),
 }
 
+pub type Pattern = Located<Pattern_>;
+
 #[derive(Debug, Clone)]
-pub enum Pattern {
+pub enum Pattern_ {
     Wildcard,
-    Identifier(String),
+    Identifier(Name),
     EmptyList,
-    Constructor(String, Vec<Pattern>),
+    Constructor(Name, Vec<Pattern>),
     Tuple(Vec<Pattern>),
 }
 
+pub type Expr = Located<Expr_>;
+
 #[derive(Debug, Clone)]
-pub enum Expr {
+pub enum Expr_ {
     External(String),
     Let(Pattern, Box<Expr>, Box<Expr>),
     Bind(Pattern, Box<Expr>, Box<Expr>),
     If(Box<Expr>, Box<Expr>, Box<Expr>),
     Ap(Box<Expr>, Box<Expr>),
-    Identifier(String),
-    Constructor(String),
+    Identifier(Name),
+    Constructor(Name),
     Lambda(Pattern, Box<Expr>),
     BinOp {
         op: Operator,
@@ -74,15 +81,15 @@ pub enum Expr {
     Int(i32),
     Float(f32),
     String(String),
-    Record(HashMap<String, Expr>),
-    Access(String, String),
+    Record(HashMap<Name, Expr>),
+    Access(Name, Name),
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
 }
 
 #[derive(Debug, Clone)]
 pub struct Import {
-    pub module: String,
+    pub module: Name,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

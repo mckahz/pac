@@ -15,7 +15,7 @@ pub fn to_camel_case(ident: &str) -> String {
             let string_char: &str = if next_word { &upper_c } else { &lower_c };
             match c {
                 '_' => (camel_case, true),
-                '?' => (camel_case + "Hmm", true),
+                '?' => (camel_case + "__hmmm", true),
                 _ => (camel_case + string_char, false),
             }
         })

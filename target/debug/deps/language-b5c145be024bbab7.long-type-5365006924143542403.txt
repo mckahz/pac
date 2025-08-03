@@ -1,0 +1,1 @@
+std::result::Result<(LocatedSpan<&str>, String), nom::Err<nom::error::Error<LocatedSpan<&str>>>>

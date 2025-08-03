@@ -1,0 +1,2 @@
+impl (Fn(LocatedSpan<&str>) -> Result<(LocatedSpan<&str>, LocatedSpan<&str>), Err<_>>) + Clone
+std::result::Result<(LocatedSpan<&str>, LocatedSpan<&'a str>), nom::Err<GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>

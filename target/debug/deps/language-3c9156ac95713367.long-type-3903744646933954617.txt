@@ -1,0 +1,1 @@
+fn(_) -> std::result::Result<(_, _), nom::Err<_>> {nom::character::complete::alphanumeric1::<_, _>}

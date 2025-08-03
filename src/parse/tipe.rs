@@ -1,59 +1,71 @@
+use crate::ast::source::{Type, Type_};
+
 use super::*;
 
-fn unit_type(i: &str) -> Result<Type> {
-    symbol("()").map(|_| Type::Unit).parse(i)
+fn unit_type(i: Span) -> Result<Type> {
+    located(symbol("()").map(|_| Type_::Unit)).parse(i)
 }
 
-fn record_type(i: &str) -> Result<Type> {
-    delimited(
+fn record_type(i: Span) -> Result<Type> {
+    located(delimited(
         symbol("{"),
         separated_list1(
             symbol(","),
             tuple((value_identifier, symbol(":"), tipe)).map(|(i, _, t)| (i, t)),
         )
-        .map(|fields| Type::Record(fields.into_iter().collect::<HashMap<String, Type>>())),
+        .map(|fields| Type_::Record(fields.into_iter().collect::<HashMap<String, Type>>())),
         symbol("}"),
-    )
+    ))
     .parse(i)
 }
 
-fn tuple_type(i: &str) -> Result<Type> {
-    let (i, types) = parens(separated_list1(symbol(","), tipe))(i)?;
-    success(Type::Tuple(types))(i)
+fn tuple_type(i: Span) -> Result<Type> {
+    located(parens(separated_list1(symbol(","), tipe)).map(|types| Type_::Tuple(types))).parse(i)
 }
 
-pub fn factor(i: &str) -> Result<Type> {
+pub fn factor(i: Span) -> Result<Type> {
     alt((
-        type_identifier.map(Type::Identifier),
-        value_identifier.map(Type::Identifier),
+        located(type_identifier.map(Type_::Identifier)),
+        located(value_identifier.map(Type_::Identifier)),
         tuple_type,
         record_type,
         unit_type,
         parens(tipe),
-    ))(i)
+    ))
+    .parse(i)
 }
 
-fn constructor(i: &str) -> Result<Type> {
-    let (i, name) = alt((type_identifier, value_identifier))(i)?;
-    let (i, factors) = many0(factor)(i)?;
+fn constructor(i: Span) -> Result<Type> {
+    located(constructor_help).parse(i)
+}
+
+fn constructor_help(i: Span) -> Result<Type_> {
+    let (i, name) = alt((type_identifier, value_identifier)).parse(i)?;
+    let (i, factors) = many0(factor).parse(i)?;
     if factors.is_empty() {
-        success(Type::Identifier(name))(i)
+        success(Type_::Identifier(name)).parse(i)
     } else {
-        success(Type::Cons(name, factors))(i)
+        success(Type_::Cons(name, factors)).parse(i)
     }
 }
 
-pub fn term(i: &str) -> Result<Type> {
-    alt((constructor, factor))(i)
+pub fn term(i: Span) -> Result<Type> {
+    alt((constructor, factor)).parse(i)
 }
 
-fn function(i: &str) -> Result<Type> {
-    let (i, terms) = separated_list1(symbol("->"), term).parse(i)?;
-    let mut terms = terms.into_iter().rev();
-    let last = terms.next().unwrap();
-    success(terms.fold(last, |acc, a| Type::Fn(Box::new(a), Box::new(acc))))(i)
+fn function(i: Span) -> Result<Type> {
+    separated_list1(symbol("->"), term)
+        .map(|terms| {
+            let mut terms = terms.into_iter().rev();
+            let last = terms.next().unwrap();
+            terms.fold(last, |acc, a| Located {
+                region: a.region.merge(&acc.region),
+                inner: Type_::Fn(Box::new(a), Box::new(acc)),
+            })
+        })
+        .parse(i)
 }
 
-pub fn tipe(i: &str) -> Result<Type> {
-    alt((function, term))(i)
+pub fn tipe(i: Span) -> Result<Type> {
+    alt((function, term)).parse(i)
 }

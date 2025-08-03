@@ -1,0 +1,1 @@
+nom::Map<for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, String), nom::Err<nom::error::Error<LocatedSpan<&'a str>>>> {parse::value_identifier}, {closure@src/parse/expression.rs:10:34: 10:37}>

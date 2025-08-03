@@ -1,0 +1,3 @@
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(&str, LocatedSpan<&str>), nom::Err<GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>
+GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(&str, LocatedSpan<&str>), nom::Err<GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>: nom::Parser<&str, _, GenericErrorTree<&str, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>

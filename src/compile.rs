@@ -1,5 +1,5 @@
 use crate::ast::core::*;
-use crate::util::indent;
+use crate::util::{indent, to_camel_case};
 
 use std::fs::File;
 use std::io::Write;
@@ -33,11 +33,11 @@ impl ToJs for Operator {
 
 impl ToJs for Expr {
     fn to_js(&self) -> String {
-        match self {
-            Expr::String(s) => "\"".to_owned() + s + "\"",
-            Expr::Num(num) => num.to_string(),
-            Expr::Binding(binding) => binding.to_owned(),
-            Expr::Constructor { tag, arity } => {
+        match &self.inner {
+            Expr_::String(s) => "\"".to_owned() + &s + "\"",
+            Expr_::Num(num) => num.to_string(),
+            Expr_::Binding(binding) => to_camel_case(binding).to_owned(),
+            Expr_::Constructor { tag, arity } => {
                 let args = (0..*arity as usize)
                     .into_iter()
                     .map(|i| format!("__arg{}", (i.to_string())))
@@ -59,7 +59,7 @@ impl ToJs for Expr {
                     if args.is_empty() { "()" } else { "" }
                 )
             }
-            Expr::List(exprs) => {
+            Expr_::List(exprs) => {
                 "[".to_owned()
                     + &exprs
                         .iter()
@@ -68,7 +68,7 @@ impl ToJs for Expr {
                         .join(", ")
                     + "]"
             }
-            Expr::Extern(string) => match &string[..] {
+            Expr_::Extern(string) => match &string[..] {
                 "println" => "console.log".to_owned(),
                 "crash" => "console.error".to_owned(),
                 "to_string" => "((x) =>
@@ -80,11 +80,11 @@ impl ToJs for Expr {
                 .to_owned(),
                 _ => string.to_owned(),
             },
-            Expr::Lambda { arg, body } => "(".to_owned() + &arg + ") => " + &body.to_js(),
-            Expr::Op { op, lhs, rhs } => {
+            Expr_::Lambda { arg, body } => "(".to_owned() + &arg + ") => " + &body.to_js(),
+            Expr_::Op { op, lhs, rhs } => {
                 "(".to_owned() + &lhs.to_js() + " " + &op.to_js() + " " + &rhs.to_js() + ")"
             }
-            Expr::When { expr, alternatives } => {
+            Expr_::When { expr, alternatives } => {
                 format!(
                             "(() => {{
     const __expr = {};
@@ -105,11 +105,11 @@ impl ToJs for Expr {
                                 .join(",\n")
                         )
             }
-            Expr::Ap { function, arg } => function.to_js() + "(" + &arg.to_js() + ")",
-            Expr::Let { defs, body } => todo!(),
-            Expr::LetRec { defs, body } => todo!(),
-            Expr::ModuleAccess { module, member } => module.to_owned() + "." + &member,
-            Expr::If {
+            Expr_::Ap { function, arg } => function.to_js() + "(" + &arg.to_js() + ")",
+            Expr_::Let { defs, body } => todo!(),
+            Expr_::LetRec { defs, body } => todo!(),
+            Expr_::ModuleAccess { module, member } => module.to_owned() + "." + &member,
+            Expr_::If {
                 cond,
                 true_branch,
                 false_branch,
@@ -148,7 +148,12 @@ fn compile_module(module: Module) -> Result<(), Box<dyn std::error::Error>> {
         } else {
             ""
         };
-        let js = export.to_owned() + "const " + &binding + " = " + &body.to_js() + ";\n\n";
+        let js = export.to_owned()
+            + "const "
+            + &to_camel_case(binding)
+            + " = "
+            + &body.to_js()
+            + ";\n\n";
         file.write(js.as_bytes()).unwrap();
     }
 

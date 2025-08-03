@@ -3,60 +3,108 @@ mod pattern;
 mod statement;
 mod tipe;
 
+use crate::ast::{Located, Name, Position, Region, Span};
 use std::collections::HashMap;
 
 use nom::{
     branch::alt,
+    bytes::complete::tag,
     character::complete::{alphanumeric1, digit1, multispace0, satisfy},
     combinator::{eof, fail, not, opt, success},
+    error::*,
     multi::{many0, many1, many_m_n, many_till, separated_list0, separated_list1},
     number,
     sequence::{delimited, preceded, separated_pair, terminated, tuple},
-    IResult, Parser,
+    AsChar, Compare, IResult, Input, Parser,
 };
-use nom_locate::LocatedSpan;
-use nom_supreme::{tag::complete::tag, ParserExt};
+use nom_locate::{position, LocatedSpan};
 
 use crate::ast::source::{Expr, Import, Module, Statement, Type};
 
-pub type Result<'a, O> = IResult<&'a str, O, nom_supreme::error::ErrorTree<&'a str>>;
-
-type Input<'a> = LocatedSpan<&'a str>;
+pub type Result<'a, O> = IResult<Span<'a>, O>;
 
 const KEYWORDS: [&str; 11] = [
     "if", "then", "else", "when", "is", "let", "module", "import", "crash", "dbg", "extern",
 ];
 
-fn lexeme<'a, F: 'a, O>(inner: F) -> impl FnMut(&'a str) -> Result<O>
+pub fn located<'a, O, E, F>(mut parser: F) -> impl Parser<Span<'a>, Output = Located<O>, Error = E>
 where
-    F: Fn(&'a str) -> Result<O>,
+    F: Parser<Span<'a>, Output = O, Error = E>,
+    E: ParseError<Span<'a>>,
 {
-    delimited(multispace0, inner, multispace0)
+    move |i: Span<'a>| {
+        let (i, start) = position(i)?;
+        let (i, inside) = parser.parse(i)?;
+        let (i, end) = position(i)?;
+        Ok((
+            i,
+            Located {
+                region: Region {
+                    start: Position {
+                        line: start.location_line() as usize,
+                        column: start.get_column(),
+                    },
+                    end: Position {
+                        line: end.location_line() as usize,
+                        column: end.get_column(),
+                    },
+                },
+                inner: inside,
+            },
+        ))
+    }
 }
 
-fn keyword<'a>(kw: &'static str) -> impl FnMut(&'a str) -> Result<&'a str> {
-    lexeme(tag(kw))
+pub fn lexeme<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E>
+where
+    F: Parser<I, Output = O, Error = E>,
+    <I as Input>::Item: AsChar,
+    I: Input + Clone,
+    E: ParseError<I>,
+{
+    delimited(multispace0, parser, multispace0)
 }
 
-fn symbol<'a>(s: &'static str) -> impl FnMut(&'a str) -> Result<&'a str> {
-    lexeme(tag(s))
+fn keyword<'a, I, E>(kw: &'static str) -> impl Parser<I, Output = (), Error = E>
+where
+    <I as Input>::Item: AsChar,
+    I: Input + Clone + Compare<&'static str>,
+    E: ParseError<I>,
+{
+    lexeme(tag(kw)).map(|_| ())
 }
 
-fn parens<'a, O>(p: impl FnMut(&'a str) -> Result<O>) -> impl FnMut(&'a str) -> Result<O> {
-    delimited(symbol("("), p, symbol(")"))
+fn symbol<'a, I, E>(s: &'static str) -> impl Parser<I, Output = (), Error = E>
+where
+    <I as Input>::Item: AsChar,
+    I: Input + Clone + Compare<&'static str>,
+    E: ParseError<I>,
+{
+    lexeme(tag(s)).map(|_| ())
 }
 
-fn value_identifier(i: &str) -> Result<String> {
-    lexeme(_value_identifier)(i)
+fn parens<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E>
+where
+    F: Parser<I, Output = O, Error = E>,
+    <I as Input>::Item: AsChar,
+    I: Input + Clone + Compare<&'static str>,
+    E: ParseError<I>,
+{
+    delimited(symbol("("), parser, symbol(")"))
 }
 
-fn _value_identifier(i: &str) -> Result<String> {
+fn value_identifier(i: Span) -> Result<Name> {
+    lexeme(_value_identifier).parse(i)
+}
+
+fn _value_identifier(i: Span) -> Result<Name> {
     let chars = |i| {
         let (i, first) = satisfy(|c| (c.is_alphabetic() && c.is_lowercase()) || c == '_')(i)?;
         let (i, mut rest) = many0(satisfy(|c| {
             (c.is_alphabetic() && c.is_lowercase()) || c == '_' || c.is_numeric()
-        }))(i)?;
-        let (i, mut end) = many0(satisfy(|c| c == '?'))(i)?;
+        }))
+        .parse(i)?;
+        let (i, mut end) = many0(satisfy(|c| c == '?')).parse(i)?;
         let mut ident: Vec<char> = vec![first];
         ident.append(&mut rest);
         ident.append(&mut end);
@@ -70,22 +118,22 @@ fn _value_identifier(i: &str) -> Result<String> {
         ))
     };
 
-    let (i, ident) = lexeme(chars)(i)?;
+    let (i, ident) = lexeme(chars).parse(i)?;
     if KEYWORDS.contains(&&*ident) {
-        fail.context("non keyword identifier").parse(i)
+        context("non keyword identifier", fail()).parse(i)
     } else {
-        success(ident).context("identifier").parse(i)
+        context("identifier", success(ident)).parse(i)
     }
 }
 
-fn type_identifier(i: &str) -> Result<String> {
-    lexeme(_type_identifier)(i)
+fn type_identifier(i: Span) -> Result<Name> {
+    lexeme(_type_identifier).parse(i)
 }
 
-fn _type_identifier(i: &str) -> Result<String> {
+fn _type_identifier(i: Span) -> Result<Name> {
     let (i, first) = satisfy(|c| (c.is_alphabetic() && c.is_uppercase()))(i)?;
-    let (i, mut rest) = many0(satisfy(|c| c.is_alphabetic() || c.is_numeric()))(i)?;
-    let (i, mut end) = many0(satisfy(|c| c == '?'))(i)?;
+    let (i, mut rest) = many0(satisfy(|c| c.is_alphabetic() || c.is_numeric())).parse(i)?;
+    let (i, mut end) = many0(satisfy(|c| c == '?')).parse(i)?;
     let mut ident: Vec<char> = vec![first];
     ident.append(&mut rest);
     ident.append(&mut end);
@@ -99,18 +147,21 @@ fn _type_identifier(i: &str) -> Result<String> {
     ))
 }
 
-pub fn file(i: &str) -> Result<Module> {
-    let (i, module_name) = preceded(keyword("module"), alphanumeric1.context("module name"))(i)?;
+pub fn file(i: Span) -> Result<Module> {
+    let (i, module_name) =
+        preceded(keyword("module"), context("module name", type_identifier)).parse(i)?;
 
-    let (i, interface) = delimited(
-        symbol("["),
-        separated_list0(symbol(","), alt((type_identifier, value_identifier))),
-        symbol("]"),
+    let (i, interface) = terminated(
+        delimited(
+            symbol("["),
+            separated_list0(symbol(","), alt((type_identifier, value_identifier))),
+            symbol("]"),
+        ),
+        symbol(";"),
     )
-    .terminated(symbol(";"))
     .parse(i)?;
 
-    let (i, statements) = many_till(statement::parse_statement.context("statement"), eof)
+    let (i, statements) = many_till(statement::parse_statement, eof)
         .map(|r| r.0)
         .parse(i)?;
 
@@ -136,5 +187,6 @@ pub fn file(i: &str) -> Result<Module> {
         interface,
         // TODO: properly parse the imports, then the definitions in a module
         defs,
-    })(i)
+    })
+    .parse(i)
 }

@@ -1,0 +1,1 @@
+fn() -> impl nom::Parser<_, Output = _, Error = _> {fail::<_, _, _>}

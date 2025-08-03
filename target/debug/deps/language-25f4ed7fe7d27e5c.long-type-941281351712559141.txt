@@ -1,0 +1,1 @@
+impl nom::Parser<_, Output = Vec<<impl FnMut(_) -> std::result::Result<(_, char), nom::Err<_>> as nom::Parser<_>>::Output>, Error = <impl FnMut(_) -> std::result::Result<(_, char), nom::Err<_>> as nom::Parser<_>>::Error>

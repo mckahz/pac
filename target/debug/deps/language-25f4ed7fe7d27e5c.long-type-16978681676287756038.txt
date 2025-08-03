@@ -1,0 +1,1 @@
+impl nom::Parser<String, Output = Vec<<fn(String) -> std::result::Result<(LocatedSpan<&str>, source::Pattern), nom::Err<nom::error::Error<LocatedSpan<&str>>>> {parse::pattern::pattern} as nom::Parser<String>>::Output>, Error = _>

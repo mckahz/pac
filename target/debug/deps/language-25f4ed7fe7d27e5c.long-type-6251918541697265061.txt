@@ -1,0 +1,1 @@
+Choice<(for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, source::Type), nom::Err<nom::error::Error<LocatedSpan<&'a str>>>> {function}, for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, source::Type), nom::Err<nom::error::Error<LocatedSpan<&'a str>>>> {parse::tipe::term})>

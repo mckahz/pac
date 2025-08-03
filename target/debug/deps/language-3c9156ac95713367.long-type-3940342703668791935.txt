@@ -1,0 +1,1 @@
+nom::Map<fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<_>> {nom::character::complete::digit1::<LocatedSpan<&str>, _>}, {closure@src/parse/expression.rs:29:14: 29:28}>

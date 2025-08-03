@@ -1,0 +1,3 @@
+nom_supreme::parser_ext::Context<fn(_) -> std::result::Result<(_, _), nom::Err<_>> {nom::character::complete::alphanumeric1::<_, _>}, &str>
+GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+nom_supreme::parser_ext::Context<fn(_) -> std::result::Result<(_, _), nom::Err<_>> {nom::character::complete::alphanumeric1::<_, _>}, &str>: nom::Parser<ast::Span<'_>, _, GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>

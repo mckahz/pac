@@ -1,0 +1,2 @@
+GenericErrorTree<LocatedSpan<&str>, &str, &str, Box<dyn std::error::Error + Send + Sync>>
+GenericErrorTree<LocatedSpan<&str>, &str, &str, Box<dyn std::error::Error + Send + Sync>>: ParseError<&str>

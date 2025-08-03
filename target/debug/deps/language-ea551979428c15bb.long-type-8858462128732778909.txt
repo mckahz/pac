@@ -1,0 +1,1 @@
+nom_supreme::parser_ext::Context<nom::Map<for<'a> fn(ast::Span<'a>) -> std::result::Result<(ast::Span<'a>, String), nom::Err<GenericErrorTree<ast::Span<'a>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {parse::value_identifier}, {closure@src/parse/expression.rs:12:14: 12:17}, String>, &'static str>

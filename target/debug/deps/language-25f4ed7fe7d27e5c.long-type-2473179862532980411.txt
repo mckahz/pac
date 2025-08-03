@@ -1,0 +1,1 @@
+nom::Map<impl nom::Parser<&str, Output = Vec<<for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, (String, Vec<source::Type>)), nom::Err<nom::error::Error<LocatedSpan<&'a str>>>> {statement::constructor} as nom::Parser<&str>>::Output>, Error = _>, {closure@src/parse/statement.rs:25:14: 25:28}>

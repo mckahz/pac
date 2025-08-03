@@ -1,0 +1,2 @@
+GenericErrorTree<&str, &str, &str, Box<dyn std::error::Error + Send + Sync>>: nom_supreme::context::ContextError<LocatedSpan<&str>, &str>
+nom_supreme::parser_ext::Context<fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<GenericErrorTree<&str, &str, &str, Box<dyn std::error::Error + Send + Sync>>>> {nom::character::complete::alphanumeric1::<LocatedSpan<&str>, GenericErrorTree<&str, &str, &str, Box<dyn std::error::Error + Send + Sync>>>}, &str>

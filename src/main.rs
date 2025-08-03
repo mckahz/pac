@@ -7,8 +7,9 @@ mod parse;
 mod report;
 mod util;
 
+use ast::Span;
 use canonicalize::canonicalize;
-use nom_supreme::{error::GenericErrorTree, final_parser::final_parser};
+use nom::{combinator::complete, Parser};
 use report::{pretty::PrettyPrint, Report};
 use std::{
     fs,
@@ -37,14 +38,15 @@ pub fn load(root_dir: &Path) -> Result<Vec<ast::source::Module>, Vec<()>> {
     let mut modules = vec![];
     let mut error_reports = vec![];
     for path in paths {
-        let file = std::fs::read_to_string(&path).unwrap();
-        let parse_results: Result<ast::source::Module, report::error::syntax::Error> =
-            final_parser(crate::parse::file)(&file);
+        let file_str = std::fs::read_to_string(&path).unwrap();
+        let file = Span::new(&file_str);
+        let parse_results: Result<ast::source::Module, _> =
+            complete(parse::file).parse(file).map(|tuple| tuple.1);
         match parse_results {
             Ok(module) => modules.push(module),
             Err(err) => {
                 eprintln!(
-                    "error parsing {}:\n{}",
+                    "error parsing {}:\n{:?}",
                     &path.as_os_str().to_str().unwrap(),
                     err
                 );
@@ -56,7 +58,7 @@ pub fn load(root_dir: &Path) -> Result<Vec<ast::source::Module>, Vec<()>> {
     if error_reports.is_empty() {
         Ok(modules)
     } else {
-        Err(todo!())
+        Err(todo!("collecting error reports"))
     }
 }
 

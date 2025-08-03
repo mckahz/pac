@@ -1,0 +1,4 @@
+nom::Map<impl FnMut(&str) -> std::result::Result<(&str, (_, _, _)), nom::Err<_>>, {closure@src/parse/tipe.rs:12:62: 12:73}, (_, _, _)>
+GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+nom::Map<impl FnMut(&str) -> std::result::Result<(&str, (_, _, _)), nom::Err<_>>, {closure@src/parse/tipe.rs:12:62: 12:73}, (_, _, _)>: nom::Parser<LocatedSpan<&str>, _, GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>
+nom::Map<impl FnMut(&str) -> std::result::Result<(&str, (_, _, _)), nom::Err<_>>, {closure@src/parse/tipe.rs:12:62: 12:73}, (_, _, _)>: nom::Parser<LocatedSpan<&str>, (String, source::Type<'_>), GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>

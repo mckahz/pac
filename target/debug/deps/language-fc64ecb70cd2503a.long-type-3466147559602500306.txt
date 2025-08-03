@@ -1,0 +1,1 @@
+impl (Fn(LocatedSpan<&str>) -> Result<(LocatedSpan<&str>, LocatedSpan<&str>), Err<_>>) + Clone

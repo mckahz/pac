@@ -1,0 +1,1 @@
+impl nom::Parser<LocatedSpan<&str>, Output = Option<<impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, ()), nom::Err<nom::error::Error<LocatedSpan<&str>>>> as nom::Parser<LocatedSpan<&str>>>::Output>, Error = nom::error::Error<LocatedSpan<&str>>>

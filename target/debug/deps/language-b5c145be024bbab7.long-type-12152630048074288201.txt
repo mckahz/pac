@@ -1,0 +1,1 @@
+Choice<(for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, Statement), nom::Err<{type error}>> {internal_type_def}, for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, Statement), nom::Err<{type error}>> {external_type_def})>

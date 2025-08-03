@@ -1,0 +1,1 @@
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, u32), nom::Err<{type error}>>

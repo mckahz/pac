@@ -1,0 +1,2 @@
+impl FnMut(LocatedSpan<&str>) -> Result<(LocatedSpan<&str>, LocatedSpan<&str>), Err<Error<LocatedSpan<&str>>>>
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<nom::error::Error<LocatedSpan<&str>>>>

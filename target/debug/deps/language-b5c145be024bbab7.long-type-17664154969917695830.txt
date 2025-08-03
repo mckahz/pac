@@ -1,0 +1,1 @@
+fn(String) -> std::result::Result<(LocatedSpan<&str>, {type error}), nom::Err<nom::error::Error<LocatedSpan<&str>>>> {tuple_pattern_help}

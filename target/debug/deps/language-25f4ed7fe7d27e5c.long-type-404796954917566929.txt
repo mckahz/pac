@@ -1,0 +1,1 @@
+nom::Map<impl nom::Parser<&str, Output = ({integer}, _), Error = _>, {closure@src/parse/expression.rs:48:10: 48:23}>

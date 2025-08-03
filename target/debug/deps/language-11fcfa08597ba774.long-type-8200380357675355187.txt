@@ -1,0 +1,1 @@
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, f32), nom::Err<GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>

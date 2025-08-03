@@ -1,0 +1,1 @@
+nom_supreme::parser_ext::Context<impl FnMut(ast::Span<'_>) -> std::result::Result<(ast::Span<'_>, String), nom::Err<_>>, &str>

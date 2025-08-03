@@ -1,13 +1,15 @@
-use crate::report::{
-    code::{self, Position, Region, Source},
-    document::Document,
-    Report,
+use crate::{
+    ast::Span,
+    report::{
+        code::{self, Position, Region, Source},
+        document::Document,
+        Report,
+    },
 };
 
-use nom::error::*;
-use nom_supreme::error::*;
+use nom;
 
-pub type Error<'a> = ErrorTree<&'a str>;
+pub type Error<'a> = nom::error::Error<Span<'a>>;
 
 pub fn to_report(error: Error, source: Source) -> Report {
     Report {

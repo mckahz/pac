@@ -1,194 +1,199 @@
 use crate::{
-    ast::{core, source},
+    ast::{self, core, source, Name, Span},
     util,
 };
 
 fn canonicalize_expression(
-    parse_expr: source::Expr,
-    type_defs: &[(String, source::TypeDef)],
+    source_expr: source::Expr,
+    type_defs: &[(Name, source::TypeDef)],
 ) -> core::Expr {
-    match parse_expr {
-        source::Expr::External(name) => core::Expr::Extern(name),
-        source::Expr::Let(pattern, expr, body) => match pattern {
-            source::Pattern::Identifier(ident) => core::Expr::Let {
-                defs: vec![(ident, canonicalize_expression(*expr, type_defs))],
+    // TODO: this doesn't generalize to custom subexpressions built in the canonicalization of operator expressions.
+    let locate = |expr: core::Expr_| ast::Located {
+        region: source_expr.region.clone(),
+        inner: expr,
+    };
+    match source_expr.inner {
+        source::Expr_::External(name) => locate(core::Expr_::Extern(name)),
+        source::Expr_::Let(pattern, expr, body) => match &pattern.inner {
+            source::Pattern_::Identifier(ident) => locate(core::Expr_::Let {
+                defs: vec![(ident.to_owned(), canonicalize_expression(*expr, type_defs))],
                 body: Box::new(canonicalize_expression(*body, type_defs)),
-            },
+            }),
             _ => todo!(),
         },
-        source::Expr::Bind(pattern, expr, expr1) => todo!(),
-        source::Expr::If(cond, t, f) => core::Expr::If {
+        source::Expr_::Bind(pattern, expr, expr1) => todo!(),
+        source::Expr_::If(cond, t, f) => locate(core::Expr_::If {
             cond: Box::new(canonicalize_expression(*cond, type_defs)),
             true_branch: Box::new(canonicalize_expression(*t, type_defs)),
             false_branch: Box::new(canonicalize_expression(*f, type_defs)),
-        },
-        source::Expr::Ap(expr, expr1) => core::Expr::Ap {
+        }),
+        source::Expr_::Ap(expr, expr1) => locate(core::Expr_::Ap {
             function: Box::new(canonicalize_expression(*expr, type_defs)),
             arg: Box::new(canonicalize_expression(*expr1, type_defs)),
-        },
-        source::Expr::Identifier(ident) => core::Expr::Binding(util::to_camel_case(&ident)),
-        source::Expr::Lambda(pattern, expr) => match pattern {
-            source::Pattern::Identifier(ident) => core::Expr::Lambda {
-                arg: ident,
+        }),
+        source::Expr_::Identifier(ident) => locate(core::Expr_::Binding(ident)),
+        source::Expr_::Lambda(pattern, expr) => match &pattern.inner {
+            source::Pattern_::Identifier(ident) => locate(core::Expr_::Lambda {
+                arg: ident.to_owned(),
                 body: Box::new(canonicalize_expression(*expr, type_defs)),
-            },
-            source::Pattern::Wildcard => core::Expr::Lambda {
+            }),
+            source::Pattern_::Wildcard => locate(core::Expr_::Lambda {
                 arg: "__wildcard".to_owned(),
                 body: Box::new(canonicalize_expression(*expr, type_defs)),
-            },
+            }),
             _ => todo!(),
         },
-        source::Expr::BinOp { op, lhs, rhs } => {
+        source::Expr_::BinOp { op, lhs, rhs } => {
             let lhs = Box::new(canonicalize_expression(*lhs, type_defs));
             let rhs = Box::new(canonicalize_expression(*rhs, type_defs));
 
             match op {
                 // TODO: find a point free way to do this
-                source::Operator::Compose => core::Expr::Lambda {
-                    arg: "x".to_owned(),
-                    body: Box::new(core::Expr::Ap {
+                source::Operator::Compose => locate(core::Expr_::Lambda {
+                    arg: "__arg".to_owned(),
+                    body: Box::new(locate(core::Expr_::Ap {
                         function: lhs,
-                        arg: Box::new(core::Expr::Ap {
+                        arg: Box::new(locate(core::Expr_::Ap {
                             function: rhs,
-                            arg: Box::new(core::Expr::Binding("x".to_owned())),
-                        }),
-                    }),
-                },
-                source::Operator::ComposeRev => core::Expr::Lambda {
-                    arg: "x".to_owned(),
-                    body: Box::new(core::Expr::Ap {
+                            arg: Box::new(locate(core::Expr_::Binding("__arg".to_owned()))),
+                        })),
+                    })),
+                }),
+                source::Operator::ComposeRev => locate(core::Expr_::Lambda {
+                    arg: "__arg".to_owned(),
+                    body: (Box::new(locate(core::Expr_::Ap {
                         function: rhs,
-                        arg: Box::new(core::Expr::Ap {
+                        arg: Box::new(locate(core::Expr_::Ap {
                             function: lhs,
-                            arg: Box::new(core::Expr::Binding("x".to_owned())),
-                        }),
-                    }),
-                },
-                source::Operator::Pipe => core::Expr::Ap {
+                            arg: Box::new(locate(core::Expr_::Binding("__arg".to_owned()))),
+                        })),
+                    }))),
+                }),
+                source::Operator::Pipe => locate(core::Expr_::Ap {
                     function: lhs,
                     arg: rhs,
-                },
-                source::Operator::PipeRev => core::Expr::Ap {
+                }),
+                source::Operator::PipeRev => locate(core::Expr_::Ap {
                     function: rhs,
                     arg: lhs,
-                },
-                source::Operator::Cons => core::Expr::Ap {
-                    function: Box::new(core::Expr::Ap {
-                        function: Box::new(core::Expr::Constructor { tag: 1, arity: 2 }),
+                }),
+                source::Operator::Cons => locate(core::Expr_::Ap {
+                    function: Box::new(locate(core::Expr_::Ap {
+                        function: Box::new(locate(core::Expr_::Constructor { tag: 1, arity: 2 })),
                         arg: lhs,
-                    }),
+                    })),
                     arg: rhs,
-                },
+                }),
 
-                source::Operator::Or => core::Expr::Op {
+                source::Operator::Or => locate(core::Expr_::Op {
                     op: core::Operator::Or,
                     lhs,
                     rhs,
-                },
-                source::Operator::And => core::Expr::Op {
+                }),
+                source::Operator::And => locate(core::Expr_::Op {
                     op: core::Operator::And,
                     lhs,
                     rhs,
-                },
-                source::Operator::Eq => core::Expr::Op {
+                }),
+                source::Operator::Eq => locate(core::Expr_::Op {
                     op: core::Operator::Eq,
                     lhs,
                     rhs,
-                },
-                source::Operator::Neq => core::Expr::Op {
+                }),
+                source::Operator::Neq => locate(core::Expr_::Op {
                     op: core::Operator::Neq,
                     lhs,
                     rhs,
-                },
-                source::Operator::LT => core::Expr::Op {
+                }),
+                source::Operator::LT => locate(core::Expr_::Op {
                     op: core::Operator::LT,
                     lhs,
                     rhs,
-                },
-                source::Operator::LTE => core::Expr::Op {
+                }),
+                source::Operator::LTE => locate(core::Expr_::Op {
                     op: core::Operator::LTE,
                     lhs,
                     rhs,
-                },
-                source::Operator::GT => core::Expr::Op {
+                }),
+                source::Operator::GT => locate(core::Expr_::Op {
                     op: core::Operator::GT,
                     lhs,
                     rhs,
-                },
-                source::Operator::GTE => core::Expr::Op {
+                }),
+                source::Operator::GTE => locate(core::Expr_::Op {
                     op: core::Operator::GTE,
                     lhs,
                     rhs,
-                },
-                source::Operator::Concat => core::Expr::Op {
+                }),
+                source::Operator::Concat => locate(core::Expr_::Op {
                     op: core::Operator::Concat,
                     lhs,
                     rhs,
-                },
-                source::Operator::Plus => core::Expr::Op {
+                }),
+                source::Operator::Plus => locate(core::Expr_::Op {
                     op: core::Operator::Plus,
                     lhs,
                     rhs,
-                },
-                source::Operator::Minus => core::Expr::Op {
+                }),
+                source::Operator::Minus => locate(core::Expr_::Op {
                     op: core::Operator::Minus,
                     lhs,
                     rhs,
-                },
-                source::Operator::Times => core::Expr::Op {
+                }),
+                source::Operator::Times => locate(core::Expr_::Op {
                     op: core::Operator::Times,
                     lhs,
                     rhs,
-                },
-                source::Operator::Divide => core::Expr::Op {
+                }),
+                source::Operator::Divide => locate(core::Expr_::Op {
                     op: core::Operator::Divide,
                     lhs,
                     rhs,
-                },
-                source::Operator::Mod => core::Expr::Op {
+                }),
+                source::Operator::Mod => locate(core::Expr_::Op {
                     op: core::Operator::Mod,
                     lhs,
                     rhs,
-                },
-                source::Operator::Power => core::Expr::Op {
+                }),
+                source::Operator::Power => locate(core::Expr_::Op {
                     op: core::Operator::Power,
                     lhs,
                     rhs,
-                },
+                }),
             }
         }
-        source::Expr::When(expr, items) => core::Expr::When {
+        source::Expr_::When(expr, items) => locate(core::Expr_::When {
             expr: Box::new(canonicalize_expression(*expr, type_defs)),
             alternatives: items
                 .into_iter()
                 .enumerate()
-                .map(|(i, (pattern, body))| match pattern {
-                    source::Pattern::Wildcard => core::Alternative {
+                .map(|(i, (pattern, body))| match &pattern.inner {
+                    source::Pattern_::Wildcard => core::Alternative {
                         tag: 0,
-                        args: vec!["_".to_owned()],
+                        args: vec!["__wildcard".to_owned()],
                         body: canonicalize_expression(body, type_defs),
                     },
-                    source::Pattern::Identifier(ident) => core::Alternative {
+                    source::Pattern_::Identifier(ident) => core::Alternative {
                         tag: 0,
-                        args: vec![ident],
+                        args: vec![ident.to_owned()],
                         body: canonicalize_expression(body, type_defs),
                     },
-                    source::Pattern::EmptyList => {
-                        let (tag, _) = canonicalize_constructor("Empty", type_defs);
+                    source::Pattern_::EmptyList => {
+                        let (tag, _) = canonicalize_constructor("Empty".to_owned(), type_defs);
                         core::Alternative {
                             tag,
                             args: vec![],
                             body: canonicalize_expression(body, type_defs),
                         }
                     }
-                    source::Pattern::Constructor(name, sub_patterns) => {
-                        let (tag, arity) = canonicalize_constructor(&name, type_defs);
+                    source::Pattern_::Constructor(name, sub_patterns) => {
+                        let (tag, arity) = canonicalize_constructor(name.to_owned(), type_defs);
                         let args = sub_patterns
                             .into_iter()
                             .enumerate()
-                            .filter_map(|(i, sub_pattern)| match sub_pattern {
-                                source::Pattern::Identifier(ident) => Some(ident.to_owned()),
-                                source::Pattern::Wildcard => {
+                            .filter_map(|(i, sub_pattern)| match &sub_pattern.inner {
+                                source::Pattern_::Identifier(ident) => Some(ident.to_owned()),
+                                source::Pattern_::Wildcard => {
                                     Some("__arg".to_owned() + &i.to_string())
                                 }
                                 _ => None,
@@ -200,64 +205,69 @@ fn canonicalize_expression(
                             body: canonicalize_expression(body.clone(), type_defs),
                         }
                     }
-                    source::Pattern::Tuple(patterns) => todo!(),
+                    source::Pattern_::Tuple(patterns) => todo!(),
                 })
                 .collect(),
-        },
-        source::Expr::Unit => todo!(),
-        source::Expr::Bool(_) => todo!(),
-        source::Expr::Nat(nat) => core::Expr::Num(nat as f64),
-        source::Expr::Int(int) => core::Expr::Num(int as f64),
-        source::Expr::Float(float) => core::Expr::Num(float as f64),
-        source::Expr::String(string) => core::Expr::String(string),
-        source::Expr::Record(hash_map) => todo!(),
-        source::Expr::Access(module, member) => core::Expr::ModuleAccess {
+        }),
+        source::Expr_::Unit => todo!(),
+        source::Expr_::Bool(_) => todo!(),
+        source::Expr_::Nat(nat) => locate(core::Expr_::Num(nat as f64)),
+        source::Expr_::Int(int) => locate(core::Expr_::Num(int as f64)),
+        source::Expr_::Float(float) => locate(core::Expr_::Num(float as f64)),
+        source::Expr_::String(string) => locate(core::Expr_::String(string)),
+        source::Expr_::Record(hash_map) => todo!(),
+        source::Expr_::Access(module, member) => locate(core::Expr_::ModuleAccess {
             module: module,
             member: member,
-        },
-        source::Expr::List(exprs) => exprs.into_iter().rev().fold(
+        }),
+        source::Expr_::List(exprs) => exprs.into_iter().rev().fold(
             {
-                let (tag, arity) = canonicalize_constructor("Empty", type_defs);
-                core::Expr::Constructor { tag, arity }
+                let (tag, arity) = canonicalize_constructor("Empty".to_owned(), type_defs);
+                locate(core::Expr_::Constructor { tag, arity })
             },
-            |list, expr| core::Expr::Ap {
-                function: Box::new(core::Expr::Ap {
-                    function: {
-                        let (tag, arity) = canonicalize_constructor("Cons", type_defs);
-                        Box::new(core::Expr::Constructor { tag, arity })
-                    },
-                    arg: Box::new(canonicalize_expression(expr, type_defs)),
-                }),
-                arg: Box::new(list),
+            |list, expr| {
+                locate(core::Expr_::Ap {
+                    function: Box::new(locate(core::Expr_::Ap {
+                        function: {
+                            let (tag, arity) =
+                                canonicalize_constructor("Cons".to_owned(), type_defs);
+                            Box::new(locate(core::Expr_::Constructor { tag, arity }))
+                        },
+                        arg: Box::new(canonicalize_expression(expr, type_defs)),
+                    })),
+                    arg: Box::new(list),
+                })
             },
         ),
         // TODO: represent lists as arrays
-        // core::Expr::List(
+        // core::Expr_::List(
         //     exprs
         //         .iter()
         //         .map(|expr| canonicalize_expression(expr.clone(), type_defs))
         //         .collect(),
         // ),
-        source::Expr::Constructor(name) => {
-            let (tag, arity) = canonicalize_constructor(&name, type_defs);
-            core::Expr::Constructor { tag, arity }
+        source::Expr_::Constructor(name) => {
+            let (tag, arity) = canonicalize_constructor(name, type_defs);
+            locate(core::Expr_::Constructor { tag, arity })
         }
-        source::Expr::Tuple(exprs) => exprs.into_iter().fold(
-            core::Expr::Constructor { tag: 0, arity: 0 },
-            |function, expr| core::Expr::Ap {
-                function: Box::new(function),
-                arg: Box::new(canonicalize_expression(expr, type_defs)),
+        source::Expr_::Tuple(exprs) => exprs.into_iter().fold(
+            locate(core::Expr_::Constructor { tag: 0, arity: 0 }),
+            |function, expr| {
+                locate(core::Expr_::Ap {
+                    function: Box::new(function),
+                    arg: Box::new(canonicalize_expression(expr, type_defs)),
+                })
             },
         ),
     }
 }
 
-fn canonicalize_constructor(name: &str, type_defs: &[(String, source::TypeDef)]) -> (u8, u8) {
+fn canonicalize_constructor(name: Name, type_defs: &[(Name, source::TypeDef)]) -> (u8, u8) {
     type_defs
         .iter()
         .filter_map(|(_, type_def)| match type_def {
             source::TypeDef::Internal { constructors, .. } => {
-                let i = constructors.iter().position(|c| &c.name == name)?;
+                let i = constructors.iter().position(|c| c.name == name)?;
                 Some((i as u8, constructors.get(i)?.args.len() as u8))
             }
             source::TypeDef::External(_) => None,
@@ -267,46 +277,36 @@ fn canonicalize_constructor(name: &str, type_defs: &[(String, source::TypeDef)])
 }
 
 pub fn canonicalize_module(
-    parse_module: source::Module,
-    type_defs: &[(String, source::TypeDef)],
+    source_module: source::Module,
+    type_defs: &[(Name, source::TypeDef)],
 ) -> core::Module {
     core::Module {
-        name: parse_module.name.to_owned(),
-        imports: parse_module
+        name: source_module.name.to_owned(),
+        imports: source_module
             .imports
             .iter()
             .map(|source::Import { module, .. }| core::Import {
                 name: module.clone(),
             })
             .collect(),
-        interface: parse_module
-            .interface
-            .into_iter()
-            .map(|export| util::to_camel_case(&export))
-            .collect::<Vec<String>>(),
-        defs: parse_module
+        interface: source_module.interface.into_iter().collect::<Vec<Name>>(),
+        defs: source_module
             .defs
-            .iter()
-            .map(|(binding, body)| {
-                (
-                    util::to_camel_case(&binding),
-                    canonicalize_expression(body.clone(), type_defs),
-                )
-            })
-            .collect(),
+            .into_iter()
+            .map(|(binding, body)| (binding, canonicalize_expression(body.clone(), type_defs)))
+            .collect::<Vec<(Name, core::Expr)>>(),
     }
 }
 
-// take the parsed AST and turn it into the core language
-pub fn canonicalize(mut parse_modules: Vec<source::Module>) -> Vec<core::Module> {
+pub fn canonicalize(mut source_modules: Vec<source::Module>) -> Vec<core::Module> {
     let mut type_defs = vec![];
-    for parse_module in parse_modules.iter_mut() {
-        type_defs.append(&mut parse_module.type_defs);
+    for source_module in source_modules.iter_mut() {
+        type_defs.append(&mut source_module.type_defs);
     }
 
     let mut core_modules = vec![];
-    for parse_module in parse_modules.into_iter() {
-        core_modules.push(canonicalize_module(parse_module, &type_defs));
+    for source_module in source_modules.into_iter() {
+        core_modules.push(canonicalize_module(source_module, &type_defs));
     }
     core_modules
 }

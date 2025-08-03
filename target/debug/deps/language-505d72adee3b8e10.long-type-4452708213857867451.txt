@@ -1,0 +1,3 @@
+GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>
+GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>: ParseError<ast::Span<'_>>
+impl FnMut(ast::Span<'_>) -> std::result::Result<(ast::Span<'_>, ast::Span<'_>), nom::Err<GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>

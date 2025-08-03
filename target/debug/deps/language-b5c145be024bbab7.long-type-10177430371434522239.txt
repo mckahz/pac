@@ -1,0 +1,2 @@
+nom::error::Error<LocatedSpan<&str>>: nom::error::ParseError<String>
+fn(String) -> std::result::Result<(LocatedSpan<&str>, ast::Located<Type_>), nom::Err<nom::error::Error<LocatedSpan<&str>>>> {parse::tipe::factor}

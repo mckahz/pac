@@ -1,14 +1,17 @@
+use super::*;
+use crate::ast::Span;
+
 #[derive(Debug, Clone)]
 pub struct Module {
-    pub name: String,
+    pub name: Name,
     pub imports: Vec<Import>,
-    pub interface: Vec<String>,
-    pub defs: Vec<(String, Expr)>,
+    pub interface: Vec<Name>,
+    pub defs: Vec<(Name, Expr)>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Import {
-    pub name: String,
+    pub name: Name,
 }
 
 #[derive(Debug, Clone)]
@@ -33,8 +36,10 @@ pub enum Operator {
     Power,
 }
 
+pub type Expr = Located<Expr_>;
+
 #[derive(Debug, Clone)]
-pub enum Expr {
+pub enum Expr_ {
     Extern(String),
     Ap {
         function: Box<Expr>,
@@ -46,15 +51,15 @@ pub enum Expr {
         rhs: Box<Expr>,
     },
     Let {
-        defs: Vec<(String, Expr)>,
+        defs: Vec<(Name, Expr)>,
         body: Box<Expr>,
     },
     LetRec {
-        defs: Vec<(String, Expr)>,
+        defs: Vec<(Name, Expr)>,
         body: Box<Expr>,
     },
     Lambda {
-        arg: String,
+        arg: Name,
         body: Box<Expr>,
     },
     If {
@@ -66,13 +71,13 @@ pub enum Expr {
         expr: Box<Expr>,
         alternatives: Vec<Alternative>,
     },
-    Binding(String),
+    Binding(Name),
     Num(f64),
-    String(String),
+    String(Name),
     List(Vec<Expr>),
     ModuleAccess {
-        module: String,
-        member: String,
+        module: Name,
+        member: Name,
     },
     Constructor {
         tag: u8,
@@ -83,6 +88,6 @@ pub enum Expr {
 #[derive(Debug, Clone)]
 pub struct Alternative {
     pub tag: u8,
-    pub args: Vec<String>,
+    pub args: Vec<Name>,
     pub body: Expr,
 }

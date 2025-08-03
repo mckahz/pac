@@ -1,37 +1,41 @@
-use crate::ast::source::Pattern;
+use crate::ast::source::{Pattern, Pattern_};
 
 use super::*;
 
-fn tuple_pattern(i: &str) -> Result<Pattern> {
-    let (i, first) = pattern
-        .preceded_by(symbol("("))
-        .terminated(symbol(","))
-        .parse(i)?;
-    let (i, mut rest) = separated_list1(symbol(","), pattern)
-        .terminated(symbol(")"))
-        .parse(i)?;
+fn tuple_pattern(i: Span) -> Result<Pattern> {
+    located(tuple_pattern_help).parse(i)
+}
+
+fn tuple_pattern_help(i: Span) -> Result<Pattern_> {
+    let (i, first) = delimited(symbol("("), pattern, symbol(",")).parse(i)?;
+    let (i, mut rest) = terminated(separated_list1(symbol(","), pattern), symbol(")")).parse(i)?;
     let mut elements = vec![];
     elements.push(first);
     elements.append(&mut rest);
-    Ok((i, Pattern::Tuple(elements)))
+    Ok((i, Pattern_::Tuple(elements)))
 }
 
-fn term(i: &str) -> Result<Pattern> {
+fn term(i: Span) -> Result<Pattern> {
     alt((
-        symbol("_").map(|_| Pattern::Wildcard),
-        symbol("[]").map(|_| Pattern::EmptyList),
+        located(symbol("_").map(|_| Pattern_::Wildcard)),
+        located(symbol("[]").map(|_| Pattern_::EmptyList)),
         tuple_pattern,
         parens(pattern),
-        value_identifier.map(|ident| Pattern::Identifier(ident)),
-        tuple((type_identifier, many0(term))).map(|(tag, args)| Pattern::Constructor(tag, args)),
-    ))(i)
+        located(value_identifier.map(|ident| Pattern_::Identifier(ident))),
+        located(
+            tuple((type_identifier, many0(term)))
+                .map(|(tag, args)| Pattern_::Constructor(tag, args)),
+        ),
+    ))
+    .parse(i)
 }
 
-pub fn pattern(i: &str) -> Result<Pattern> {
+pub fn pattern(i: Span) -> Result<Pattern> {
     let (i, mut terms) = separated_list1(symbol("::"), term).parse(i)?;
     let last = terms.pop().unwrap();
-    let cons = terms.into_iter().fold(last, |acc, t| {
-        Pattern::Constructor("Cons".to_owned(), vec![t, acc])
+    let cons = terms.into_iter().fold(last, |acc, t| Located {
+        region: acc.region.merge(&t.region),
+        inner: Pattern_::Constructor("Cons".to_owned(), vec![t, acc]),
     });
-    success(cons)(i)
+    success(cons).parse(i)
 }

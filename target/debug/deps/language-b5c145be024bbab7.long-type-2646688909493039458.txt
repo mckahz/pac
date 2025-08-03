@@ -1,0 +1,1 @@
+fn(String) -> std::result::Result<(LocatedSpan<&str>, source::Type), nom::Err<nom::error::Error<LocatedSpan<&str>>>> {parse::tipe::factor}

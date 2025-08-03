@@ -1,0 +1,2 @@
+std::result::Result<(ast::Span<'_>, source::Pattern<'_>), nom::Err<GenericErrorTree<ast::Span<'_>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>
+for<'a> fn(&'a str) -> std::result::Result<(ast::Span<'a>, source::Pattern<'a>), nom::Err<GenericErrorTree<ast::Span<'a>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {parse::pattern::term}

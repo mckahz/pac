@@ -1,7 +1,5 @@
-use nom_supreme::error::ErrorTree;
-
 use crate::{
-    ast::source::{Expr, Import, Operator, Pattern, Type},
+    ast::source::{Expr, Expr_, Import, Operator, Pattern, Pattern_, Type, Type_},
     util::indent,
 };
 
@@ -17,13 +15,13 @@ impl PrettyPrint for Import {
 
 impl PrettyPrint for Type {
     fn pretty_print(&self) -> String {
-        match self {
-            Type::Unit => "()".to_owned(),
-            Type::Identifier(ident) => ident.to_owned(),
-            Type::Fn(arg, ret) => {
+        match &self.inner {
+            Type_::Unit => "()".to_owned(),
+            Type_::Identifier(ident) => ident.to_owned(),
+            Type_::Fn(arg, ret) => {
                 "(".to_owned() + &arg.pretty_print() + " -> " + &ret.pretty_print() + ")"
             }
-            Type::Record(fields) => {
+            Type_::Record(fields) => {
                 "{".to_owned()
                     + &fields
                         .iter()
@@ -32,7 +30,7 @@ impl PrettyPrint for Type {
                         .join(", ")
                     + "}"
             }
-            Type::Tuple(types) => {
+            Type_::Tuple(types) => {
                 "(".to_owned()
                     + &types
                         .iter()
@@ -41,8 +39,8 @@ impl PrettyPrint for Type {
                         .join(", ")
                     + ")"
             }
-            Type::External(name) => "extern \"".to_string() + &name.to_string() + "\"",
-            Type::Cons(name, args) => {
+            Type_::External(name) => "extern \"".to_string() + &name.to_string() + "\"",
+            Type_::Cons(name, args) => {
                 name.to_owned()
                     + &args
                         .iter()
@@ -85,11 +83,11 @@ impl PrettyPrint for Operator {
 
 impl PrettyPrint for Pattern {
     fn pretty_print(&self) -> String {
-        match self {
-            Pattern::Wildcard => "_".to_string(),
-            Pattern::Identifier(ident) => ident.to_string(),
-            Pattern::EmptyList => "[]".to_string(),
-            Pattern::Constructor(tag, patterns) => {
+        match &self.inner {
+            Pattern_::Wildcard => "_".to_string(),
+            Pattern_::Identifier(ident) => ident.to_string(),
+            Pattern_::EmptyList => "[]".to_string(),
+            Pattern_::Constructor(tag, patterns) => {
                 tag.to_owned()
                     + &patterns
                         .iter()
@@ -97,7 +95,7 @@ impl PrettyPrint for Pattern {
                         .collect::<Vec<String>>()
                         .join(" ")
             }
-            Pattern::Tuple(patterns) => {
+            Pattern_::Tuple(patterns) => {
                 "(".to_owned()
                     + &patterns
                         .iter()
@@ -112,9 +110,9 @@ impl PrettyPrint for Pattern {
 
 impl PrettyPrint for Expr {
     fn pretty_print(&self) -> String {
-        match self {
-            Expr::Identifier(i) => i.to_owned(),
-            Expr::BinOp { op, lhs, rhs } => {
+        match &self.inner {
+            Expr_::Identifier(i) => i.to_owned(),
+            Expr_::BinOp { op, lhs, rhs } => {
                 "(".to_owned()
                     + &lhs.pretty_print()
                     + " "
@@ -123,11 +121,11 @@ impl PrettyPrint for Expr {
                     + &rhs.pretty_print()
                     + ")"
             }
-            Expr::Nat(n) => n.to_string(),
-            Expr::Int(i) => i.to_string(),
-            Expr::Float(x) => x.to_string(),
-            Expr::String(s) => "\"".to_owned() + s + "\"",
-            Expr::Record(fields) => {
+            Expr_::Nat(n) => n.to_string(),
+            Expr_::Int(i) => i.to_string(),
+            Expr_::Float(x) => x.to_string(),
+            Expr_::String(s) => "\"".to_owned() + s + "\"",
+            Expr_::Record(fields) => {
                 "{ ".to_owned()
                     + &fields
                         .iter()
@@ -136,8 +134,8 @@ impl PrettyPrint for Expr {
                         .join(", ")
                     + " }"
             }
-            Expr::Access(module, member) => module.to_owned() + "." + &member,
-            Expr::List(xs) => {
+            Expr_::Access(module, member) => module.to_owned() + "." + &member,
+            Expr_::List(xs) => {
                 "[".to_string()
                     + &xs
                         .iter()
@@ -146,11 +144,13 @@ impl PrettyPrint for Expr {
                         .join(", ")
                     + "]"
             }
-            Expr::Ap(f, xs) => "(".to_string() + &f.pretty_print() + " " + &xs.pretty_print() + ")",
-            Expr::Lambda(arg, body) => {
+            Expr_::Ap(f, xs) => {
+                "(".to_string() + &f.pretty_print() + " " + &xs.pretty_print() + ")"
+            }
+            Expr_::Lambda(arg, body) => {
                 "(\\".to_owned() + &arg.pretty_print() + " -> " + &body.pretty_print() + ")"
             }
-            Expr::When(expr, branches) => {
+            Expr_::When(expr, branches) => {
                 "when ".to_string()
                     + &expr.pretty_print()
                     + " is\n"
@@ -165,8 +165,8 @@ impl PrettyPrint for Expr {
                                 .join("\n| ")),
                     )
             }
-            Expr::Unit => "()".to_string(),
-            Expr::If(cond, then_branch, else_branch) => {
+            Expr_::Unit => "()".to_string(),
+            Expr_::If(cond, then_branch, else_branch) => {
                 "(if ".to_string()
                     + &cond.pretty_print()
                     + " then "
@@ -175,9 +175,9 @@ impl PrettyPrint for Expr {
                     + &else_branch.pretty_print()
                     + ")"
             }
-            Expr::Bool(bool) => bool.to_string(),
-            Expr::External(name) => "@".to_string() + name,
-            Expr::Let(pattern, def, body) => {
+            Expr_::Bool(bool) => bool.to_string(),
+            Expr_::External(name) => "@".to_string() + name,
+            Expr_::Let(pattern, def, body) => {
                 "(let ".to_owned()
                     + &pattern.pretty_print()
                     + " = "
@@ -185,7 +185,7 @@ impl PrettyPrint for Expr {
                     + "; "
                     + &body.pretty_print()
             }
-            Expr::Bind(pattern, def, body) => {
+            Expr_::Bind(pattern, def, body) => {
                 "(let ".to_owned()
                     + &pattern.pretty_print()
                     + " <- "
@@ -193,8 +193,8 @@ impl PrettyPrint for Expr {
                     + "; "
                     + &body.pretty_print()
             }
-            Expr::Constructor(cons) => cons.to_owned(),
-            Expr::Tuple(exprs) => {
+            Expr_::Constructor(cons) => cons.to_owned(),
+            Expr_::Tuple(exprs) => {
                 "(".to_owned()
                     + &exprs
                         .iter()

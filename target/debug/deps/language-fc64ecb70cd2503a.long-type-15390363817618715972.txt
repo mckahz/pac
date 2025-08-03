@@ -1,0 +1,2 @@
+std::result::Result<(LocatedSpan<&str>, source::Expr<'_>), nom::Err<GenericErrorTree<LocatedSpan<&str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>>
+for<'a> fn(&'a str) -> std::result::Result<(LocatedSpan<&'a str>, source::Expr<'a>), nom::Err<GenericErrorTree<LocatedSpan<&'a str>, &'static str, &'static str, Box<(dyn std::error::Error + Send + Sync + 'static)>>>> {parse::expression::expression}
