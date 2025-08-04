@@ -3,7 +3,10 @@ mod pattern;
 mod statement;
 mod tipe;
 
-use crate::ast::{Located, Name, Position, Region, Span};
+use crate::{
+    ast::{Located, Name, Position, Region, Span},
+    report::error::syntax::ErrorTree,
+};
 use std::collections::HashMap;
 
 use nom::{
@@ -21,7 +24,7 @@ use nom_locate::{position, LocatedSpan};
 
 use crate::ast::source::{Expr, Import, Module, Statement, Type};
 
-pub type Result<'a, O> = IResult<Span<'a>, O>;
+pub type Result<'a, O> = IResult<Span<'a>, O, ErrorTree>;
 
 const KEYWORDS: [&str; 11] = [
     "if", "then", "else", "when", "is", "let", "module", "import", "crash", "dbg", "extern",

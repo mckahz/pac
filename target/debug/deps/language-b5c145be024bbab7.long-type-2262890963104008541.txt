@@ -1,0 +1,2 @@
+nom::error::Context<for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, String), nom::Err<ast::Located<Error_>>> {parse::type_identifier}>
+nom::error::Context<for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, String), nom::Err<ast::Located<Error_>>> {parse::type_identifier}>: nom::Parser<_>

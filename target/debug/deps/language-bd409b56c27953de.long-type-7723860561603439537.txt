@@ -1,0 +1,2 @@
+syntax::Error: nom::error::ParseError<LocatedSpan<&str>>
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, char), nom::Err<syntax::Error>>

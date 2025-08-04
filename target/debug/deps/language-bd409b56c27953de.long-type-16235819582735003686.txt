@@ -1,0 +1,12 @@
+syntax::Error: nom::error::ParseError<LocatedSpan<&str>>
+fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<syntax::Error>> {nom::character::complete::digit1::<LocatedSpan<&str>, syntax::Error>}
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = LocatedSpan<&str>, Error = syntax::Error>, {closure@src/parse/expression.rs:19:14: 19:28}>
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, source::Expr_), nom::Err<syntax::Error>> {let_from_help}
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, source::Expr_), nom::Err<syntax::Error>> {let_in_help}
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, source::Expr_), nom::Err<syntax::Error>> {if_expr_help}
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, source::Expr_), nom::Err<syntax::Error>> {when_expr_help}
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = (), Error = syntax::Error>, {closure@src/parse/expression.rs:292:38: 292:41}>
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, source::Expr_), nom::Err<syntax::Error>> {tuple_expression_help}
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, Pattern_), nom::Err<syntax::Error>> {tuple_pattern_help}
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = (), Error = syntax::Error>, {closure@src/parse/tipe.rs:6:30: 6:33}>
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, Type_), nom::Err<syntax::Error>> {constructor_help}

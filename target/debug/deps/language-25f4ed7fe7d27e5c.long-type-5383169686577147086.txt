@@ -1,0 +1,1 @@
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = Vec<<for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<Type_>), nom::Err<syntax::Error>> {parse::tipe::term} as nom::Parser<LocatedSpan<&str>>>::Output>, Error = syntax::Error>, {closure@src/parse/tipe.rs:58:14: 58:21}>

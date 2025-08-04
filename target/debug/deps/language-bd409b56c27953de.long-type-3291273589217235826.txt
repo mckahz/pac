@@ -1,0 +1,2 @@
+syntax::Error: nom::error::ParseError<LocatedSpan<&str>>
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, source::Module), nom::Err<syntax::Error>> {file}

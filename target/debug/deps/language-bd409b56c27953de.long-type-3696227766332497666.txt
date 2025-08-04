@@ -1,0 +1,4 @@
+syntax::Error: nom::error::ParseError<LocatedSpan<&str>>
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<source::Expr_>), nom::Err<syntax::Error>> {parse::expression::expression}
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<Pattern_>), nom::Err<syntax::Error>> {parse::pattern::pattern}
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<Type_>), nom::Err<syntax::Error>> {parse::tipe::tipe}

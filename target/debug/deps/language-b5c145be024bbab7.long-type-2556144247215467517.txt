@@ -1,0 +1,1 @@
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = (), Error = syntax::Error>, {closure@src/parse/tipe.rs:6:30: 6:33}>

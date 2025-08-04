@@ -1,0 +1,2 @@
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = Vec<(String, ast::Located<source::Expr_>)>, Error = syntax::Error>, {closure@src/parse/expression.rs:60:14: 60:22}>
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = Vec<(String, ast::Located<source::Expr_>)>, Error = syntax::Error>, {closure@src/parse/expression.rs:60:14: 60:22}>: nom::Parser<LocatedSpan<&str>>

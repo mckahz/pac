@@ -40,10 +40,11 @@ pub fn load(root_dir: &Path) -> Result<Vec<ast::source::Module>, Vec<()>> {
     for path in paths {
         let file_str = std::fs::read_to_string(&path).unwrap();
         let file = Span::new(&file_str);
-        let parse_results: Result<ast::source::Module, _> =
-            complete(parse::file).parse(file).map(|tuple| tuple.1);
+
+        let parse_results = complete(parse::file).parse(file);
+
         match parse_results {
-            Ok(module) => modules.push(module),
+            Ok((_, module)) => modules.push(module),
             Err(err) => {
                 eprintln!(
                     "error parsing {}:\n{:?}",

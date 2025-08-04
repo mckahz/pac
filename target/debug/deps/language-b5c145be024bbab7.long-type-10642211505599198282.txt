@@ -1,0 +1,1 @@
+fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<syntax::Error>> {nom::character::complete::digit1::<LocatedSpan<&str>, syntax::Error>}

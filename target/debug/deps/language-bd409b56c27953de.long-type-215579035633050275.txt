@@ -1,0 +1,1 @@
+Choice<(nom::error::Context<for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, Statement), nom::Err<syntax::Error>> {import_statement}>, for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, Statement), nom::Err<syntax::Error>> {let_declaration})>

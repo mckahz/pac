@@ -1,0 +1,1 @@
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, (String, Vec<ast::Located<Pattern_>>)), nom::Err<syntax::Error>>

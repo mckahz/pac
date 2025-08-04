@@ -138,6 +138,7 @@ fn operator(i: Span) -> Result<Operator> {
     .parse(i)
 }
 
+// the following uses operator-precedence parsing to parse expressions with binary operators.
 fn operator_expression_help(
     ops: &mut VecDeque<Operator>,
     exprs: &mut VecDeque<Expr>,

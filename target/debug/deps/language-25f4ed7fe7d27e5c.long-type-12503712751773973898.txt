@@ -1,0 +1,1 @@
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, (String, Vec<ast::Located<Type_>>)), nom::Err<syntax::Error>> {statement::constructor}

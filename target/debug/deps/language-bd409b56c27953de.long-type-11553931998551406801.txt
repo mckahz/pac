@@ -1,0 +1,1 @@
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, u32), nom::Err<syntax::Error>> {nat}

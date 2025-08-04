@@ -1,0 +1,1 @@
+impl Fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<syntax::Error>>

@@ -1,0 +1,2 @@
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = String, Error = syntax::Error>, {closure@src/parse/expression.rs:302:61: 302:67}>
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = String, Error = syntax::Error>, {closure@src/parse/expression.rs:302:61: 302:67}>: nom::Parser<LocatedSpan<&str>>

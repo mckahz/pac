@@ -1,0 +1,4 @@
+syntax::Error: nom::error::ParseError<LocatedSpan<&str>>
+nom::Map<impl nom::Parser<LocatedSpan<&str>, Output = (Vec<<impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, char), nom::Err<syntax::Error>> as nom::Parser<LocatedSpan<&str>>>::Output>, <impl Fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<syntax::Error>> as nom::Parser<LocatedSpan<&str>>>::Output), Error = syntax::Error>, {closure@src/parse/expression.rs:38:53: 38:65}>
+impl Fn(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, LocatedSpan<&str>), nom::Err<syntax::Error>>
+impl FnMut(LocatedSpan<&str>) -> std::result::Result<(LocatedSpan<&str>, char), nom::Err<syntax::Error>>

@@ -1,0 +1,1 @@
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<source::Expr_>), nom::Err<syntax::Error>> {parse::expression::expression}

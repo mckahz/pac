@@ -1,0 +1,1 @@
+Choice<(for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<Type_>), nom::Err<syntax::Error>> {parse::tipe::constructor}, for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, ast::Located<Type_>), nom::Err<syntax::Error>> {parse::tipe::factor})>
