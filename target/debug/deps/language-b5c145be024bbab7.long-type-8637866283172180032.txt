@@ -1,0 +1,1 @@
+for<'a> fn(LocatedSpan<&'a str>) -> std::result::Result<(LocatedSpan<&'a str>, String), nom::Err<{type error}>> {parse::value_identifier}

@@ -1,0 +1,1 @@
+std::iter::Map<std::vec::IntoIter<document::Document>, {closure@src/report/document.rs:29:26: 29:31}>

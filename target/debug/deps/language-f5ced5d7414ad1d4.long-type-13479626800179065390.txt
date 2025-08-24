@@ -1,0 +1,1 @@
+std::iter::Map<std::slice::Iter<'_, source::Module>, fn(Vec<source::Module>) -> Interface {Interface::from_module}>

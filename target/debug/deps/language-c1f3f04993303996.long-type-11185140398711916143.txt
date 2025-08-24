@@ -1,0 +1,1 @@
+std::iter::Map<std::slice::Iter<'_, source::Module>, fn(Vec<{type error}, {type error}>) -> Interface {Interface::from_module}>

@@ -1,4 +1,4 @@
-module Bool [];
+module Bool [Bool(..)];
 
 let Bool = True | False;
 
@@ -14,3 +14,10 @@ let or lhs rhs =
     when lhs is
     | True -> True
     | False -> rhs;;
+
+
+let not : Bool -> Bool;
+let not bool =
+    when bool is
+    | True -> False
+    | False -> True;;

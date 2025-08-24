@@ -14,12 +14,6 @@ fn constructor(i: Span) -> Result<Expr> {
     located(type_identifier.map(|s| Expr_::Constructor(s))).parse(i)
 }
 
-fn nat(i: Span) -> Result<u32> {
-    lexeme(digit1)
-        .map(|digits: Span| digits.parse::<u32>().unwrap())
-        .parse(i)
-}
-
 fn int(i: Span) -> Result<i32> {
     lexeme(terminated(
         tuple((
@@ -74,19 +68,35 @@ fn list(i: Span) -> Result<Expr> {
     .parse(i)
 }
 
+fn qualified(i: Span) -> Result<Expr> {
+    located(qualified_help).parse(i)
+}
+
+fn qualified_help(i: Span) -> Result<Expr_> {
+    let (i, mut module) = module_name.parse(i)?;
+    let (i, value) = opt(preceded(symbol("."), value_identifier)).parse(i)?;
+    success(match value {
+        Some(v) => Expr_::QualifiedIdentifier(module, v),
+        None => {
+            let constructor = module
+                .0
+                .pop()
+                .expect("module_name wouldn't have parsed if it were empty");
+            Expr_::QualifiedConstructor(module, constructor)
+        }
+    })
+    .parse(i)
+}
+
 fn factor(i: Span) -> Result<Expr> {
     alt((
-        located(
-            tuple((terminated(type_identifier, symbol(".")), value_identifier))
-                .map(|(module, member)| Expr_::Access(module, member)),
-        ),
+        qualified,
         parens(expression),
         record_literal,
         list,
         identifier,
         constructor,
         located((string_literal).map(Expr_::String)),
-        located((nat).map(Expr_::Nat)),
         located((int).map(Expr_::Int)),
         located(lexeme(number::complete::float).map(Expr_::Float)),
     ))
@@ -284,7 +294,12 @@ fn when_expr_help(i: Span) -> Result<Expr_> {
     let (i, _) = opt(symbol("|")).parse(i)?;
     let (i, alternatives) =
         terminated(separated_list1(symbol("|"), alternative), symbol(";")).parse(i)?;
-    success(Expr_::When(Box::new(val), alternatives)).parse(i)
+    success(Expr_::When(
+        Box::new(val),
+        Box::new(alternatives[0].clone()), // NOTE: `alternatives` must have at least 1 element because of the seperated_list1 combinator
+        alternatives[1..].to_vec(),
+    ))
+    .parse(i)
 }
 
 fn crash_expr(i: Span) -> Result<Expr> {

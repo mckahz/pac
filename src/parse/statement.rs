@@ -1,13 +1,12 @@
-use super::{expression::expression, *};
-use crate::ast::source::{Constructor, Expr_, Statement, TypeDef};
+use std::collections::HashSet;
 
-fn import_hierarchy(i: Span) -> Result<String> {
-    alt((value_identifier, type_identifier)).parse(i)
-}
+use super::{expression::expression, *};
+use crate::ast::source::{Constructor, Expr_, Statement, TypeDefinition};
 
 fn import_statement(i: Span) -> Result<Statement> {
-    let (i, module) = delimited(keyword("import"), import_hierarchy, symbol(";")).parse(i)?;
-    Ok((i, Statement::Import(Import { module })))
+    delimited(keyword("import"), type_identifier, symbol(";"))
+        .map(|module| Statement::Import(ModuleName(vec![module])))
+        .parse(i)
 }
 
 fn constructor(i: Span) -> Result<(String, Vec<Type>)> {
@@ -34,7 +33,13 @@ fn internal_type_def(i: Span) -> Result<Statement> {
 
     Ok((
         i,
-        Statement::LetType(name, TypeDef::Internal { args, constructors }),
+        Statement::LetType(
+            name,
+            TypeDefinition::Union(Union {
+                variables: args,
+                variants: constructors,
+            }),
+        ),
     ))
 }
 
@@ -43,7 +48,7 @@ fn external_type_def(i: Span) -> Result<Statement> {
     let (i, _args) = terminated(many0(value_identifier), symbol("=")).parse(i)?;
 
     let (i, type_def) = delimited(keyword("extern"), expression::string_literal, symbol(";"))
-        .map(|s| TypeDef::External(s))
+        .map(|s| TypeDefinition::External(s))
         .parse(i)?;
 
     Ok((i, Statement::LetType(name, type_def)))
@@ -93,9 +98,12 @@ fn let_declaration(i: Span) -> Result<Statement> {
 }
 
 pub fn parse_statement(i: Span) -> Result<Statement> {
-    alt((
-        context("import statement", import_statement),
-        let_declaration,
-    ))
+    context(
+        "statement",
+        alt((
+            context("import statement", import_statement),
+            let_declaration,
+        )),
+    )
     .parse(i)
 }

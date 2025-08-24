@@ -1,0 +1,1 @@
+impl nom::Parser<LocatedSpan<&str>, Output = Option<<impl nom::Parser<LocatedSpan<&str>, Output = String, Error = ast::Located<syntax::ErrorKind>> as nom::Parser<LocatedSpan<&str>>>::Output>, Error = ast::Located<syntax::ErrorKind>>

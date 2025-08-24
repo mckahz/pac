@@ -1,0 +1,2 @@
+AndThen<impl nom::Parser<LocatedSpan<&str>, Output = ast::ModuleName, Error = ast::Located<syntax::ErrorKind>>, {closure@src/parse/expression.rs:73:63: 73:71}>
+AndThen<impl nom::Parser<LocatedSpan<&str>, Output = ast::ModuleName, Error = ast::Located<syntax::ErrorKind>>, {closure@src/parse/expression.rs:73:63: 73:71}>: nom::Parser<LocatedSpan<&str>>

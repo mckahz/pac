@@ -16,6 +16,8 @@ module List
     , range
     ];
 
+import Bool;
+
 let List a =
     | Empty
     | Cons a (List a);
@@ -39,11 +41,11 @@ let rest xs =
     | [] -> crash "cannot get rest of empty list"
     | _::xs -> xs;;
 
-let empty? : List a -> Bool;
+let empty? : List a -> Bool.Bool;
 let empty? xs =
     when xs is
-    | [] -> True
-    | _ -> False;;
+    | [] -> Bool.True
+    | _ -> Bool.False;;
 
 let walk : acc -> (a -> acc -> acc) -> List a -> acc;
 let walk init f xs =
@@ -61,7 +63,7 @@ let map : (a -> b) -> List a -> List b;
 let map f =
     walk_backwards [] (\x acc -> f x :: acc);
 
-let keep_if : (a -> Bool) -> List a -> List a;
+let keep_if : (a -> Bool.Bool) -> List a -> List a;
 let keep_if p = walk_backwards [] (\x acc ->
         if p x then
             x :: acc
@@ -69,29 +71,22 @@ let keep_if p = walk_backwards [] (\x acc ->
             acc
     );
 
-let drop_if : (a -> Bool) -> List a -> List a;
+let drop_if : (a -> Bool.Bool) -> List a -> List a;
 let drop_if p = keep_if (not << p);
 
-let sum : List Int -> Int;
+let sum : List Int.Int -> Int.Int;
 let sum = walk 0 (\a b -> a + b);
 
-let product : List Int -> Int;
+let product : List Int.Int -> Int.Int;
 let product = walk 0 (\a b -> a * b);
 
-let repeat : Int -> a -> List a;
+let repeat : Int.Int -> a -> List a;
 let repeat n x = range 0 n |> map (\_ -> x);
 
-let range : Int -> Int -> List Int;
+let range : Int.Int -> Int.Int -> List Int.Int;
 let range lo hi = range_help [] lo hi;
 
-let range2 : Int -> Int -> List Int;
-let range2 lo hi =
-    if lo < hi then
-        lo :: range2 (lo + 1) hi
-    else
-        [];
-
-let range_help : List Int -> Int -> Int -> List Int;
+let range_help : List Int.Int -> Int.Int -> Int.Int -> List Int.Int;
 let range_help acc lo hi =
     if lo > hi then
         acc

@@ -3,17 +3,25 @@
 mod ast;
 mod canonicalize;
 mod compile;
+mod optimize;
 mod parse;
 mod report;
+mod type_check;
 mod util;
 
-use ast::Span;
-use canonicalize::canonicalize;
-use nom::{combinator::complete, Parser};
-use report::{pretty::PrettyPrint, Report};
+use nom::{combinator::complete, Finish, Parser};
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
+};
+
+use crate::{
+    ast::{ModuleName, Name, Span},
+    canonicalize::canonicalize,
+    optimize::optimize,
+    report::{code::Source, pretty::PrettyPrint, Report},
+    type_check::type_check,
 };
 
 fn get_paths(root_dir: &Path) -> Vec<PathBuf> {
@@ -33,50 +41,62 @@ fn get_paths(root_dir: &Path) -> Vec<PathBuf> {
     return paths;
 }
 
-pub fn load(root_dir: &Path) -> Result<Vec<ast::source::Module>, Vec<()>> {
-    let paths = get_paths(root_dir);
-    let mut modules = vec![];
-    let mut error_reports = vec![];
-    for path in paths {
-        let file_str = std::fs::read_to_string(&path).unwrap();
-        let file = Span::new(&file_str);
+fn load_module(path: PathBuf) -> Option<ast::source::Module> {
+    let file_str = std::fs::read_to_string(&path).unwrap();
+    let file = Span::new(&file_str);
+    let file_source = Source::new(&file_str);
+    let file_name = path.as_os_str().to_str().unwrap();
 
-        let parse_results = complete(parse::file).parse(file);
+    let parse_results = complete(parse::file).parse(file).finish();
 
-        match parse_results {
-            Ok((_, module)) => modules.push(module),
-            Err(err) => {
-                eprintln!(
-                    "error parsing {}:\n{:?}",
-                    &path.as_os_str().to_str().unwrap(),
-                    err
-                );
-                error_reports.push(());
-            }
+    match parse_results {
+        Ok((_, module)) => Some(module),
+        Err(err) => {
+            eprintln!(
+                "\n{}",
+                err.to_report(file_source, file_name)
+                    .render(std::cmp::min(termsize::get().unwrap().cols as u32, 80))
+            );
+            None
         }
     }
+}
 
-    if error_reports.is_empty() {
-        Ok(modules)
+fn load(root_dir: &Path) -> Option<Vec<ast::source::Module>> {
+    let paths = get_paths(root_dir);
+    let num_paths = paths.len();
+    let modules: Vec<ast::source::Module> = paths.into_iter().filter_map(load_module).collect();
+    if modules.len() < num_paths {
+        None
     } else {
-        Err(todo!("collecting error reports"))
+        Some(modules)
     }
 }
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
     //std::env::set_var("RUST_BACKTRACE", "1");
-    let root_dir = Path::new(&args[1]);
-    let all_modules = {
-        let mut user_modules = load(root_dir).unwrap();
-        let mut builtin_modules = load(Path::new("src/basics")).unwrap();
+    let args: Vec<String> = std::env::args().collect();
+    let root_dir = Path::new("test"); //(&args[1]);
 
-        let mut all = vec![];
-        all.append(&mut user_modules);
-        all.append(&mut builtin_modules);
-        all
+    let mut modules = vec![];
+    let Some(mut builtin_modules) = load(Path::new("src/basics")) else {
+        eprintln!("\n\nI couldn't load all of the built in modules!");
+        std::process::exit(1);
     };
-    let modules = canonicalize(all_modules);
+    modules.append(&mut builtin_modules);
 
+    let Some(mut user_modules) = load(root_dir) else {
+        eprintln!(
+            "\n\nI couldn't load all the modules in the {:?} folder!",
+            root_dir
+        );
+        std::process::exit(1);
+    };
+    // TODO: import all builtin modules to the user modules
+    modules.append(&mut user_modules);
+
+    let modules = canonicalize(modules);
+    type_check(&modules).expect("failed type checking");
+    let modules = optimize(&modules);
     compile::compile(modules);
 }

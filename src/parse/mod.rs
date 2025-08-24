@@ -4,8 +4,11 @@ mod statement;
 mod tipe;
 
 use crate::{
-    ast::{Located, Name, Position, Region, Span},
-    report::error::syntax::ErrorTree,
+    ast::{
+        source::{Export, Expr, Module, Statement, Type, TypeDefinition, Union, Value},
+        Located, ModuleName, Name, Position, Region, Span,
+    },
+    report::error::syntax::Error,
 };
 use std::collections::HashMap;
 
@@ -22,9 +25,7 @@ use nom::{
 };
 use nom_locate::{position, LocatedSpan};
 
-use crate::ast::source::{Expr, Import, Module, Statement, Type};
-
-pub type Result<'a, O> = IResult<Span<'a>, O, ErrorTree>;
+pub type Result<'a, O> = IResult<Span<'a>, O, Error>;
 
 const KEYWORDS: [&str; 11] = [
     "if", "then", "else", "when", "is", "let", "module", "import", "crash", "dbg", "extern",
@@ -81,9 +82,9 @@ fn symbol<'a, I, E>(s: &'static str) -> impl Parser<I, Output = (), Error = E>
 where
     <I as Input>::Item: AsChar,
     I: Input + Clone + Compare<&'static str>,
-    E: ParseError<I>,
+    E: ParseError<I> + ContextError<I>,
 {
-    lexeme(tag(s)).map(|_| ())
+    context("symbol", context(s, lexeme(tag(s)).map(|_| ())))
 }
 
 fn parens<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E>
@@ -91,7 +92,7 @@ where
     F: Parser<I, Output = O, Error = E>,
     <I as Input>::Item: AsChar,
     I: Input + Clone + Compare<&'static str>,
-    E: ParseError<I>,
+    E: ParseError<I> + ContextError<I>,
 {
     delimited(symbol("("), parser, symbol(")"))
 }
@@ -150,14 +151,26 @@ fn _type_identifier(i: Span) -> Result<Name> {
     ))
 }
 
-pub fn file(i: Span) -> Result<Module> {
-    let (i, module_name) =
-        preceded(keyword("module"), context("module name", type_identifier)).parse(i)?;
+fn export(i: Span) -> Result<Export> {
+    alt((
+        terminated(type_identifier, symbol("(..)")).map(Export::OpenType),
+        type_identifier.map(Export::ClosedType),
+        value_identifier.map(Export::Value),
+    ))
+    .parse(i)
+}
 
-    let (i, interface) = terminated(
+fn module_name(i: Span) -> Result<ModuleName> {
+    lexeme(separated_list1(symbol("."), type_identifier).map(ModuleName)).parse(i)
+}
+
+pub fn file(i: Span) -> Result<Module> {
+    let (i, mod_name) = preceded(keyword("module"), module_name).parse(i)?;
+
+    let (i, exports) = terminated(
         delimited(
             symbol("["),
-            separated_list0(symbol(","), alt((type_identifier, value_identifier))),
+            separated_list0(symbol(","), export),
             symbol("]"),
         ),
         symbol(";"),
@@ -169,27 +182,32 @@ pub fn file(i: Span) -> Result<Module> {
         .parse(i)?;
 
     let mut imports = vec![];
-    let mut type_defs = vec![];
-    let mut signatures = vec![];
-    let mut defs = vec![];
+    let mut types = HashMap::new();
+    let mut annotations = HashMap::new();
+    let mut values = HashMap::new();
 
     for statement in statements {
         match statement {
             Statement::Import(import) => imports.push(import),
-            Statement::LetSignature(binding, tipe) => signatures.push((binding, tipe)),
-            Statement::LetValue(binding, expr) => defs.push((binding, expr)),
-            Statement::LetType(binding, type_def) => type_defs.push((binding, type_def)),
+            Statement::LetSignature(binding, tipe) => {
+                annotations.insert(binding, tipe);
+            }
+            Statement::LetValue(binding, expr) => {
+                values.insert(binding, expr);
+            }
+            Statement::LetType(binding, type_def) => {
+                types.insert(binding, type_def);
+            }
         }
     }
 
     success(Module {
-        name: module_name.to_owned(),
+        name: mod_name,
         imports,
-        type_defs,
-        signatures,
-        interface,
-        // TODO: properly parse the imports, then the definitions in a module
-        defs,
+        exports,
+        types,
+        values,
+        annotations,
     })
     .parse(i)
 }

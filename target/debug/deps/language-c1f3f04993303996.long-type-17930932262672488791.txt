@@ -1,0 +1,2 @@
+&std::iter::Map<std::slice::Iter<'_, ast::Located<source::Type_>>, {closure@src/interface.rs:32:72: 32:77}>
+HashSet<_, _>: From<&std::iter::Map<std::slice::Iter<'_, ast::Located<source::Type_>>, {closure@src/interface.rs:32:72: 32:77}>>

@@ -1,29 +1,36 @@
-pub struct Source(Vec<(u32, String)>);
+use crate::ast::Region;
 
-impl Source {
-    pub fn len(&self) -> usize {
-        self.0.iter().map(|(_, line)| line.len()).sum()
+use super::document::*;
+
+pub struct Source<'a> {
+    code: &'a str,
+}
+
+fn left_pad(string: &str, width: u32, c: char) -> String {
+    c.to_string().repeat(width as usize - string.len()) + string
+}
+
+impl<'a> Source<'a> {
+    pub fn new(file: &'a str) -> Self {
+        Self { code: file }
     }
-}
 
-#[derive(Debug)]
-pub struct Region {
-    pub start: Position,
-    pub end: Position,
-}
-
-#[derive(Debug)]
-pub struct Position {
-    pub row: u16,
-    pub col: u16,
-}
-
-fn from_string(string: &str) -> Source {
-    Source(
-        string
-            .split("\n")
-            .enumerate()
-            .map(|(n, line)| (n as u32, line.to_owned()))
-            .collect(),
-    )
+    pub fn snippet(&self, region: Region) -> Document {
+        vertical_append(
+            self.code
+                .to_owned()
+                .split("\n")
+                .enumerate()
+                .skip(region.start.line - 1)
+                .take(1 + region.end.line - region.start.line)
+                .map(|(i, line)| {
+                    append(vec![
+                        text(&(left_pad(&(i + 1).to_string(), 4, ' ') + " |")),
+                        color(Color::Red, text("> ")),
+                        text(line),
+                    ])
+                })
+                .collect::<Vec<Document>>(),
+        )
+    }
 }

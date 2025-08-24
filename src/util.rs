@@ -21,3 +21,17 @@ pub fn to_camel_case(ident: &str) -> String {
         })
         .0
 }
+
+pub fn intersperse<T>(mut vec: Vec<T>, sep: T) -> Vec<T>
+where
+    T: Clone,
+{
+    vec.reverse();
+    let Some(first) = vec.pop() else {
+        return vec![];
+    };
+    vec.into_iter().rev().fold(vec![first], |mut full, x| {
+        full.append(&mut vec![sep.clone(), x]);
+        full
+    })
+}

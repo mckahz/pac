@@ -1,0 +1,1 @@
+Choice<std::result::Result<(LocatedSpan<&str>, String), nom::Err<ast::Located<syntax::ErrorKind>>>>

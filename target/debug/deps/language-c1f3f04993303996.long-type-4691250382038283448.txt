@@ -1,0 +1,1 @@
+fn(ast::Located<canonical::Pattern_>, ast::Located<canonical::Expr_>) -> optimized::Alternative {optimize::alternative}

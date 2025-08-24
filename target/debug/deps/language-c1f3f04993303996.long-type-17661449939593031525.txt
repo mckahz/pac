@@ -1,0 +1,2 @@
+std::result::Result<(LocatedSpan<&str>, ast::ModuleName), nom::Err<ast::Located<syntax::ErrorKind>>>
+std::result::Result<(LocatedSpan<&str>, ast::ModuleName), nom::Err<ast::Located<syntax::ErrorKind>>>: nom::Parser<_>

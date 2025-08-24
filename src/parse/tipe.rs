@@ -20,13 +20,36 @@ fn record_type(i: Span) -> Result<Type> {
 }
 
 fn tuple_type(i: Span) -> Result<Type> {
-    located(parens(separated_list1(symbol(","), tipe)).map(|types| Type_::Tuple(types))).parse(i)
+    located(
+        parens(tuple((
+            terminated(tipe, symbol(",")),
+            tipe,
+            preceded(symbol(","), separated_list0(symbol(","), tipe)),
+        )))
+        .map(|(first, second, rest)| Type_::Tuple(Box::new(first), Box::new(second), rest)),
+    )
+    .parse(i)
+}
+
+fn qualified(i: Span) -> Result<Type> {
+    located(qualified_help).parse(i)
+}
+
+fn qualified_help(i: Span) -> Result<Type_> {
+    let (i, mut module) = module_name.parse(i)?;
+    match module.0.pop() {
+        Some(constructor) if module.0.is_empty() => {
+            success(Type_::Identifier(constructor)).parse(i)
+        }
+        Some(constructor) => success(Type_::QualifiedIdentifier(module, constructor)).parse(i),
+        _ => fail().parse(i),
+    }
 }
 
 pub fn factor(i: Span) -> Result<Type> {
     alt((
-        located(type_identifier.map(Type_::Identifier)),
-        located(value_identifier.map(Type_::Identifier)),
+        qualified,
+        located(value_identifier.map(Type_::Variable)),
         tuple_type,
         record_type,
         unit_type,
@@ -35,22 +58,26 @@ pub fn factor(i: Span) -> Result<Type> {
     .parse(i)
 }
 
-fn constructor(i: Span) -> Result<Type> {
-    located(constructor_help).parse(i)
-}
-
-fn constructor_help(i: Span) -> Result<Type_> {
-    let (i, name) = alt((type_identifier, value_identifier)).parse(i)?;
-    let (i, factors) = many0(factor).parse(i)?;
-    if factors.is_empty() {
-        success(Type_::Identifier(name)).parse(i)
-    } else {
-        success(Type_::Cons(name, factors)).parse(i)
-    }
-}
-
 pub fn term(i: Span) -> Result<Type> {
-    alt((constructor, factor)).parse(i)
+    located(term_help).parse(i)
+}
+
+fn term_help(i: Span) -> Result<Type_> {
+    let (i, cons) = factor.parse(i)?;
+    let (i, mut factors) = many0(factor).parse(i)?;
+    factors.reverse();
+    match factors.pop() {
+        None => success(cons.inner).parse(i),
+        Some(first_arg) => {
+            factors.reverse();
+            success(Type_::Constructor(
+                Box::new(cons),
+                Box::new(first_arg),
+                factors,
+            ))
+            .parse(i)
+        }
+    }
 }
 
 fn function(i: Span) -> Result<Type> {

@@ -18,7 +18,7 @@ fn tuple_pattern_help(i: Span) -> Result<Pattern_> {
 fn term(i: Span) -> Result<Pattern> {
     alt((
         located(symbol("_").map(|_| Pattern_::Wildcard)),
-        located(symbol("[]").map(|_| Pattern_::EmptyList)),
+        located(symbol("[]").map(|_| Pattern_::Constructor("Empty".to_owned(), vec![]))),
         tuple_pattern,
         parens(pattern),
         located(value_identifier.map(|ident| Pattern_::Identifier(ident))),
@@ -35,7 +35,7 @@ pub fn pattern(i: Span) -> Result<Pattern> {
     let last = terms.pop().unwrap();
     let cons = terms.into_iter().fold(last, |acc, t| Located {
         region: acc.region.merge(&t.region),
-        inner: Pattern_::Constructor("Cons".to_owned(), vec![t, acc]),
+        inner: Pattern_::Cons(Box::new(t), Box::new(acc)),
     });
     success(cons).parse(i)
 }

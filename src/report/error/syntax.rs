@@ -1,71 +1,93 @@
 use crate::{
-    ast::{Located, Position, Span},
-    report::{
-        code::{self, Source},
-        document::Document,
-        Report,
-    },
+    ast::{Located, Position, Region, Span},
+    report::{code::Source, document::Document, Report},
 };
 
 use nom::error::{ContextError, ParseError};
 
-#[derive(Debug)]
-pub enum ErrorTree {
-    Base(Error, Position),
-    Stack(Error, Position, Box<ErrorTree>),
-    Alt(Vec<ErrorTree>),
-}
+pub type Error = Located<ErrorKind>;
 
 #[derive(Debug)]
-pub enum Error {
+pub enum ErrorKind {
     MissingSemicolon,
-    String(String),
+    // try remove these
+    ExpectedTag,
+    Expected(String),
 }
 
-impl Error {
-    fn from_error_kind(kind: nom::error::ErrorKind) -> Self {
-        Error::String(format!("{:?}", kind).to_owned())
-    }
-}
-
-impl<'a> ParseError<Span<'a>> for ErrorTree {
+impl<'a> ParseError<Span<'a>> for Error {
     fn from_error_kind(input: Span, kind: nom::error::ErrorKind) -> Self {
         use nom::error::ErrorKind::*;
 
-        let error = Error::from_error_kind(kind);
+        let pos = Position::from_span(input);
 
-        ErrorTree::Base(
-            error,
-            Position {
-                line: input.location_line() as usize,
-                column: input.get_column(),
+        Error {
+            region: Region {
+                start: pos.clone(),
+                end: pos,
             },
-        )
+            inner: ErrorKind::ExpectedTag,
+        }
     }
 
     fn append(input: Span, kind: nom::error::ErrorKind, other: Self) -> Self {
-        let error = Error::from_error_kind(kind);
-        ErrorTree::Stack(
-            error,
-            Position {
-                line: input.location_line() as usize,
-                column: input.get_column(),
+        let error = Error::from_error_kind(input, kind);
+        Error {
+            region: error.region.merge(&other.region),
+            inner: other.inner,
+        }
+    }
+
+    fn from_char(input: Span<'a>, c: char) -> Self {
+        let pos = Position::from_span(input);
+        Error {
+            region: Region {
+                start: pos.clone(),
+                end: pos,
             },
-            Box::new(other),
-        )
+            inner: ErrorKind::Expected(c.to_string()),
+        }
+    }
+
+    fn or(self, other: Self) -> Self {
+        let pos1 = &self.region.end;
+        let pos2 = &other.region.end;
+        if pos1 > pos2 {
+            self
+        } else {
+            other
+        }
     }
 }
 
-impl<'a> ContextError<Span<'a>> for ErrorTree {
+impl<'a> ContextError<Span<'a>> for Error {
     fn add_context(_input: Span<'a>, _ctx: &'static str, other: Self) -> Self {
-        other
+        let error = match other.inner {
+            ErrorKind::ExpectedTag if _ctx == ";" => ErrorKind::MissingSemicolon,
+            _ => other.inner,
+        };
+        Located {
+            region: other.region,
+            inner: error,
+        }
     }
 }
 
-pub fn to_report(error: Error, source: Source) -> Report {
-    Report {
-        title: "PARSE ERROR".to_owned(),
-        region: todo!(),
-        message: todo!(),
+impl Error {
+    pub fn to_report(&self, source: Source, file_name: &str) -> Report {
+        use crate::report::{code, document::*};
+        match self.inner {
+            ErrorKind::MissingSemicolon => Report {
+                title: "MISSING SEMICOLON".to_owned(),
+                path: file_name.to_owned(),
+                message: stack(vec![
+                    text("I'm not sure when the end of this statement is!"),
+                    source.snippet(self.region.clone()),
+                    hint("Add a semicolon (;) at the end."),
+                ]),
+            },
+            ErrorKind::ExpectedTag => todo!(),
+            ErrorKind::Expected(_) => todo!(),
+        }
     }
 }

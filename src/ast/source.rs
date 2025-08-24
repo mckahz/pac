@@ -1,30 +1,55 @@
 use super::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+// MODULE
 
 #[derive(Debug, Clone)]
 pub struct Module {
-    pub name: Name,
-    pub interface: Vec<Name>,
-    pub imports: Vec<Import>,
-    pub signatures: Vec<(Name, Type)>,
-    pub type_defs: Vec<(Name, TypeDef)>,
-    pub defs: Vec<(Name, Expr)>,
-}
-
-pub enum Statement {
-    Import(Import),
-    LetType(Name, TypeDef),
-    LetSignature(Name, Type),
-    LetValue(Name, Expr),
+    pub name: ModuleName,
+    pub exports: Vec<Export>,
+    pub imports: Vec<ModuleName>,
+    pub types: HashMap<Name, TypeDefinition>,
+    pub values: HashMap<Name, Expr>,
+    pub annotations: HashMap<Name, Type>,
 }
 
 #[derive(Debug, Clone)]
-pub enum TypeDef {
-    Internal {
-        args: Vec<Name>,
-        constructors: Vec<Constructor>,
-    },
+pub enum Export {
+    Value(Name),
+    ClosedType(Name),
+    OpenType(Name),
+}
+
+#[derive(Debug, Clone)]
+pub enum TypeDefinition {
+    Alias(Alias),
+    Union(Union),
     External(String),
+}
+
+impl TypeDefinition {
+    pub fn uses(&self, name: &Name) -> bool {
+        match self {
+            TypeDefinition::Alias(alias) => todo!(),
+            TypeDefinition::Union(union) => union
+                .variants
+                .iter()
+                .any(|variant| variant.args.iter().any(|arg| arg.inner.uses(name))),
+            TypeDefinition::External(_) => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Alias {
+    pub variables: Vec<Name>,
+    pub other: Type,
+}
+
+#[derive(Debug, Clone)]
+pub struct Union {
+    pub variables: Vec<Name>,
+    pub variants: Vec<Constructor>,
 }
 
 #[derive(Debug, Clone)]
@@ -33,18 +58,104 @@ pub struct Constructor {
     pub args: Vec<Type>,
 }
 
+#[derive(Debug, Clone)]
+pub struct Value {
+    pub signature: Option<Type>,
+    pub value: Expr,
+}
+
+pub enum Statement {
+    Import(ModuleName),
+    LetType(Name, TypeDefinition),
+    LetSignature(Name, Type),
+    LetValue(Name, Expr),
+}
+
+// TYPE
+
 pub type Type = Located<Type_>;
 
 #[derive(Debug, Clone)]
 pub enum Type_ {
-    External(String),
     Unit,
-    Cons(Name, Vec<Type>),
+    Constructor(Box<Type>, Box<Type>, Vec<Type>), // Constructor, Argument, Rest of Arguments. If there were no arguments it should be an identifier
     Identifier(Name),
+    QualifiedIdentifier(ModuleName, Name),
+    Variable(Name),
     Fn(Box<Type>, Box<Type>),
     Record(HashMap<Name, Type>),
-    Tuple(Vec<Type>),
+    Tuple(Box<Type>, Box<Type>, Vec<Type>),
 }
+
+impl Type_ {
+    pub fn free_variables(&self) -> HashSet<Name> {
+        match self {
+            Type_::Variable(var) => HashSet::from([var.clone()]),
+            Type_::Constructor(cons, first_arg, args) => {
+                args.iter().map(|arg| arg.inner.free_variables()).fold(
+                    cons.inner
+                        .free_variables()
+                        .union(&first_arg.inner.free_variables())
+                        .map(|s| s.clone())
+                        .collect(),
+                    |all, one| all.union(&one).map(|s| s.clone()).collect(),
+                )
+            }
+            Type_::Fn(f, x) => f
+                .inner
+                .free_variables()
+                .union(&x.inner.free_variables())
+                .map(|s| s.clone())
+                .collect(),
+            Type_::Identifier(_) => HashSet::new(),
+            Type_::QualifiedIdentifier(_, _) => HashSet::new(),
+            Type_::Unit => HashSet::new(),
+            Type_::Record(fields) => fields
+                .iter()
+                .map(|(_, tipe)| tipe.inner.free_variables())
+                .fold(HashSet::new(), |all, one| {
+                    all.union(&one).map(|s| s.clone()).collect()
+                }),
+            Type_::Tuple(a, b, rest) => {
+                let mut vars = vec![];
+                vars.push(a.inner.free_variables());
+                vars.push(b.inner.free_variables());
+                vars.append(
+                    &mut rest
+                        .iter()
+                        .map(|tipe| tipe.inner.free_variables())
+                        .collect(),
+                );
+                vars.into_iter().fold(HashSet::new(), |all, one| {
+                    all.union(&one).map(|s| s.clone()).collect()
+                })
+            }
+        }
+    }
+
+    fn uses(&self, name: &Name) -> bool {
+        match self {
+            Type_::Identifier(arg_name) => arg_name == name,
+            Type_::Constructor(cons, arg, rest) => {
+                cons.inner.uses(name)
+                    || arg.inner.uses(name)
+                    || rest.iter().any(|arg| arg.inner.uses(name))
+            }
+            Type_::Unit => false,
+            Type_::QualifiedIdentifier(_, _) => false,
+            Type_::Variable(_) => false,
+            Type_::Fn(lhs, rhs) => lhs.inner.uses(name) || rhs.inner.uses(name),
+            Type_::Record(fields) => fields.iter().any(|(_, tipe)| tipe.inner.uses(name)),
+            Type_::Tuple(a, b, rest) => {
+                a.inner.uses(name)
+                    || b.inner.uses(name)
+                    || rest.iter().any(|arg| arg.inner.uses(name))
+            }
+        }
+    }
+}
+
+// PATTERN
 
 pub type Pattern = Located<Pattern_>;
 
@@ -52,10 +163,12 @@ pub type Pattern = Located<Pattern_>;
 pub enum Pattern_ {
     Wildcard,
     Identifier(Name),
-    EmptyList,
     Constructor(Name, Vec<Pattern>),
+    Cons(Box<Pattern>, Box<Pattern>),
     Tuple(Vec<Pattern>),
 }
+
+// EXPRESSION
 
 pub type Expr = Located<Expr_>;
 
@@ -67,29 +180,24 @@ pub enum Expr_ {
     If(Box<Expr>, Box<Expr>, Box<Expr>),
     Ap(Box<Expr>, Box<Expr>),
     Identifier(Name),
+    QualifiedIdentifier(ModuleName, Name),
     Constructor(Name),
+    QualifiedConstructor(ModuleName, Name),
     Lambda(Pattern, Box<Expr>),
     BinOp {
         op: Operator,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
     },
-    When(Box<Expr>, Vec<(Pattern, Expr)>),
+    When(Box<Expr>, Box<(Pattern, Expr)>, Vec<(Pattern, Expr)>),
     Unit,
     Bool(bool),
-    Nat(u32),
     Int(i32),
     Float(f32),
     String(String),
     Record(HashMap<Name, Expr>),
-    Access(Name, Name),
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
-}
-
-#[derive(Debug, Clone)]
-pub struct Import {
-    pub module: Name,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

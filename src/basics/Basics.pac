@@ -1,4 +1,6 @@
 module Basics [to_string];
 
-let to_string : a -> String;
+import String;
+
+let to_string : a -> String.String;
 let to_string = extern "to_string";

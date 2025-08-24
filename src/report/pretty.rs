@@ -1,16 +1,10 @@
 use crate::{
-    ast::source::{Expr, Expr_, Import, Operator, Pattern, Pattern_, Type, Type_},
+    ast::source::{Expr, Expr_, Operator, Pattern, Pattern_, Type, Type_},
     util::indent,
 };
 
 pub trait PrettyPrint {
     fn pretty_print(&self) -> String;
-}
-
-impl PrettyPrint for Import {
-    fn pretty_print(&self) -> String {
-        "import ".to_string() + &self.module + ";"
-    }
 }
 
 impl PrettyPrint for Type {
@@ -30,24 +24,30 @@ impl PrettyPrint for Type {
                         .join(", ")
                     + "}"
             }
-            Type_::Tuple(types) => {
-                "(".to_owned()
-                    + &types
-                        .iter()
-                        .map(|t| t.pretty_print())
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                    + ")"
+            Type_::Tuple(first, second, rest) => {
+                let rest = if rest.is_empty() {
+                    ""
+                } else {
+                    &(",".to_owned()
+                        + &rest
+                            .iter()
+                            .map(|t| t.pretty_print())
+                            .collect::<Vec<_>>()
+                            .join(", "))
+                };
+                "(".to_owned() + &first.pretty_print() + "," + &second.pretty_print() + rest + ")"
             }
-            Type_::External(name) => "extern \"".to_string() + &name.to_string() + "\"",
-            Type_::Cons(name, args) => {
-                name.to_owned()
+            Type_::Constructor(cons, first_arg, args) => {
+                cons.pretty_print()
+                    + &first_arg.pretty_print()
                     + &args
                         .iter()
                         .map(|arg| arg.pretty_print())
                         .collect::<Vec<String>>()
                         .join(" ")
             }
+            Type_::Variable(name) => name.to_owned(),
+            Type_::QualifiedIdentifier(module_name, name) => module_name.0.join(".") + "." + &name,
         }
     }
 }
@@ -86,15 +86,18 @@ impl PrettyPrint for Pattern {
         match &self.inner {
             Pattern_::Wildcard => "_".to_string(),
             Pattern_::Identifier(ident) => ident.to_string(),
-            Pattern_::EmptyList => "[]".to_string(),
-            Pattern_::Constructor(tag, patterns) => {
-                tag.to_owned()
-                    + &patterns
-                        .iter()
-                        .map(|pattern| pattern.pretty_print())
-                        .collect::<Vec<String>>()
-                        .join(" ")
-            }
+            Pattern_::Constructor(tag, patterns) => match &**tag {
+                "Empty" => "[]".to_owned(),
+                // TODO: cons
+                _ => {
+                    tag.to_owned()
+                        + &patterns
+                            .iter()
+                            .map(|pattern| pattern.pretty_print())
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                }
+            },
             Pattern_::Tuple(patterns) => {
                 "(".to_owned()
                     + &patterns
@@ -104,6 +107,7 @@ impl PrettyPrint for Pattern {
                         .join(", ")
                     + ")"
             }
+            Pattern_::Cons(element, list) => element.pretty_print() + "::" + &list.pretty_print(),
         }
     }
 }
@@ -121,7 +125,6 @@ impl PrettyPrint for Expr {
                     + &rhs.pretty_print()
                     + ")"
             }
-            Expr_::Nat(n) => n.to_string(),
             Expr_::Int(i) => i.to_string(),
             Expr_::Float(x) => x.to_string(),
             Expr_::String(s) => "\"".to_owned() + s + "\"",
@@ -134,7 +137,8 @@ impl PrettyPrint for Expr {
                         .join(", ")
                     + " }"
             }
-            Expr_::Access(module, member) => module.to_owned() + "." + &member,
+            Expr_::QualifiedIdentifier(module, member) => module.0.join(".") + "." + &member,
+            Expr_::QualifiedConstructor(module, member) => module.0.join(".") + "." + &member,
             Expr_::List(xs) => {
                 "[".to_string()
                     + &xs
@@ -150,10 +154,16 @@ impl PrettyPrint for Expr {
             Expr_::Lambda(arg, body) => {
                 "(\\".to_owned() + &arg.pretty_print() + " -> " + &body.pretty_print() + ")"
             }
-            Expr_::When(expr, branches) => {
+            Expr_::When(expr, branch, branches) => {
                 "when ".to_string()
                     + &expr.pretty_print()
                     + " is\n"
+                    + &indent(
+                        &("| ".to_string()
+                            + &branch.0.pretty_print()
+                            + " -> "
+                            + &branch.1.pretty_print()),
+                    )
                     + &indent(
                         &("| ".to_string()
                             + &branches
